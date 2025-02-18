@@ -75,13 +75,13 @@ function main() {
     --env SOFTWARE_DIR='/software_dir' \
     --env ANSIBLE_FORCE_COLOR='true' \
     --env NSXT_LICENSE_KEY=${NSXT_LICENSE_KEY:-na} \
-    --env AVI_DEFAULT_PASSWORD=\"${AVI_DEFAULT_PASSWORD:-na}\" \
+    --env AVI_DEFAULT_PASSWORD=${AVI_DEFAULT_PASSWORD:-na} \
     --volume ${SOFTWARE_DIR}:/software_dir \
     --volume ${CONFIG_DIR}/lab-builder:/config_dir \
     --volume ${LAB_BUILDER_DIR}:/work \
     laidbackware/vmware-lab-builder:v12 \
     ansible-playbook \
-    /work/$MODE.yml --extra-vars '@/config_dir/1host-nsx-tas.yml'
+    /work/$MODE.yml --extra-vars '@/config_dir/1host-nsx-avi-tas.yml'
 
 }
 
