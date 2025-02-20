@@ -1,1 +1,30 @@
 .envrc
+
+# Terraform state files
+*.tfstate
+*.tfstate.backup
+
+# Crash logs
+crash.log
+crash.*.log
+
+# Terraform plan files
+*.tfplan
+
+# Ignore CLI configuration files
+.terraformrc
+terraform.rc
+
+# Ignore Terraform provider and lock files
+.terraform/
+.terraform.lock.hcl
+
+# Ignore override files (local customizations)
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Ignore variables files that may contain sensitive data
+*.auto.tfvars
+*.auto.tfvars.json
