@@ -4,6 +4,13 @@ terraform {
       source  = "vmware/nsxt"
       version = "~> 3.0"
     }
+    avi = {
+      source  = "vmware/avi"
+      version = "22.1.5"
+    }
+    vsphere = { 
+      source = "hashicorp/vsphere" 
+    }
   }
 }
 
@@ -68,4 +75,8 @@ variable "avi_vip_segment_ip_cidr" {}
 
 output "t1_router_id" {
   value = nsxt_policy_tier1_gateway.t1_router.id
+}
+
+output "transport_zone_type" {
+  value = data.nsxt_policy_transport_zone.tz.transport_type
 }
