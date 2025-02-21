@@ -209,32 +209,32 @@ resource "avi_network" "avi_vip_segment" {
   # }
 }
 
-# resource "avi_healthmonitor" "web_monitor" {
-#   name                = var.avi_health_monitor_name
-#   type                = "HEALTH_MONITOR_HTTP"
-#   monitor_port        = 8080
+resource "avi_healthmonitor" "web_monitor" {
+  name                = var.avi_health_monitor_name
+  type                = "HEALTH_MONITOR_HTTP"
+  monitor_port        = 8080
 
-#   http_monitor {
-#     http_request = "GET /health HTTP/1.0"
-#     http_response_code = ["HTTP_2XX"]
-#   }
-# }
+  http_monitor {
+    http_request = "GET /health HTTP/1.0"
+    http_response_code = ["HTTP_2XX"]
+  }
+}
 
-# resource "avi_sslkeyandcertificate" "wildcard_cert" {
-#   name         = "tas-wildcard-cert"
-#   key = file("${path.module}/wildcard_cert.key")
-#   certificate {
-#     certificate = file("${path.module}/wildcard_cert.crt")
-#   }
-#   type= "SSL_CERTIFICATE_TYPE_VIRTUALSERVICE"
-# }
-# resource "avi_sslkeyandcertificate" "opsman_root_ca" {
-#   name         = "opsman_root_ca"
-#   certificate {
-#     certificate = var.opsman_ca_cert
-#   }
-#   type= "SSL_CERTIFICATE_TYPE_CA"
-# }
+resource "avi_sslkeyandcertificate" "wildcard_cert" {
+  name         = "tas-wildcard-cert"
+  key = file("${path.module}/wildcard_cert.key")
+  certificate {
+    certificate = file("${path.module}/wildcard_cert.crt")
+  }
+  type= "SSL_CERTIFICATE_TYPE_VIRTUALSERVICE"
+}
+resource "avi_sslkeyandcertificate" "opsman_root_ca" {
+  name         = "opsman_root_ca"
+  certificate {
+    certificate = var.opsman_ca_cert
+  }
+  type= "SSL_CERTIFICATE_TYPE_CA"
+}
 
 
 resource "avi_vsvip" "tas_web" {
