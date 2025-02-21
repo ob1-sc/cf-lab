@@ -27,7 +27,7 @@ resource "avi_cloud" "nsxt_cloud" {
   name                 = "nsx-cloud"
   vtype                = "CLOUD_NSXT"
   maintenance_mode = "true"
-
+  obj_name_prefix = "nsx-avi-automated"
   nsxt_configuration {
     nsxt_url     = var.nsxt_host
     nsxt_credentials_ref = avi_cloudconnectoruser.nsxt_user.id
@@ -68,6 +68,155 @@ resource "avi_vcenterserver" "vcenter" {
   cloud_ref               = avi_cloud.nsxt_cloud.id
 }
 
+resource "avi_vrfcontext" "avi_mgmt_vrf" {
+  name        = var.avi_mgmt_vrf_name
+  cloud_ref   = avi_cloud.nsxt_cloud.id
+  static_routes {
+    prefix {
+      ip_addr {
+        addr = "0.0.0.0/0"
+        type = "V4"
+      }
+      mask = 0
+    }
+    next_hop {
+      addr = var.avi_mgmt_segment_gateway
+      type = "V4"
+    }
+    route_id = "1"
+  }
+}
+
+resource "avi_vrfcontext" "avi_vip_vrf" {
+  name        = var.avi_vip_vrf_name
+  cloud_ref   = avi_cloud.nsxt_cloud.id
+  static_routes {
+    prefix {
+      ip_addr {
+        addr = "0.0.0.0/0"
+        type = "V4"
+      }
+      mask = 0
+    }
+    next_hop {
+      addr = var.avi_vip_segment_gateway
+      type = "V4"
+    }
+    route_id = "1"
+  }
+}
+
+resource "avi_network" "avi_mgmt_segment" {
+  name        = var.avi_mgmt_segment_name
+  vrf_context_ref = avi_vrfcontext.avi_mgmt_vrf.id
+  cloud_ref   = avi_cloud.nsxt_cloud.id
+  dhcp_enabled = false
+  configured_subnets {
+    prefix {
+      ip_addr {
+        addr = var.avi_mgmt_network_ip_addr
+        type = "V4"
+      }
+      mask = var.avi_mgmt_network_ip_addr_mask
+    }
+    static_ip_ranges {
+      range {
+        begin {
+          addr = var.avi_mgmt_segment_static_ip_begin
+          type = "V4"   
+        }
+        end {
+          addr = var.avi_mgmt_segment_static_ip_end
+          type = "V4"
+        }
+      }
+      type = "STATIC_IPS_FOR_VIP_AND_SE"
+    }
+  }
+}
+
+resource "avi_network" "avi_vip_segment" {
+  name        = var.avi_vip_segment_name
+  vrf_context_ref = avi_vrfcontext.avi_vip_vrf.id
+  cloud_ref   = avi_cloud.nsxt_cloud.id
+  dhcp_enabled = false
+  configured_subnets {
+    prefix {
+      ip_addr {
+        addr = var.avi_vip_segment_ip_addr
+        type = "V4"
+      }
+      mask = var.avi_vip_segment_ip_addr_mask
+    }
+    static_ip_ranges {
+      range {
+        begin {
+          addr = var.avi_vip_segment_static_ip_begin
+          type = "V4"   
+        }
+        end {
+          addr = var.avi_vip_segment_static_ip_end
+          type = "V4"
+        }
+      }
+      type = "STATIC_IPS_FOR_VIP_AND_SE"
+    }
+  }
+}
+
+resource "avi_healthmonitor" "web_monitor" {
+  name                = var.avi_health_monitor_name
+  type                = "HEALTH_MONITOR_HTTP"
+  monitor_port        = 8080
+
+  http_monitor {
+    http_request = "GET /health HTTP/1.0"
+    http_response_code = ["HTTP_2XX"]
+  }
+}
+
+resource "avi_sslkeyandcertificate" "wildcard_cert" {
+  name         = "tas-wildcard-cert"
+  key = file("${path.module}/wildcard_cert.key")
+  certificate {
+    certificate = file("${path.module}/wildcard_cert.crt")
+  }
+  type= "SSL_CERTIFICATE_TYPE_VIRTUALSERVICE"
+}
+resource "avi_sslkeyandcertificate" "opsman_root_ca" {
+  name         = "opsman_root_ca"
+  certificate {
+    certificate = var.opsman_ca_cert
+  }
+  type= "SSL_CERTIFICATE_TYPE_CA"
+}
+
+
+# TODO: continue here
+# resource "avi_vsvip" "tas_web" {
+#   name = "tas-web-vip"
+#   cloud_ref = avi_cloud.nsxt_cloud.id
+#   vrf_context_ref = avi_vrfcontext.avi_vip_vrf
+#   vip {
+#     vip_id                    = "0"
+#     auto_allocate_ip          = true
+#     # avi_allocated_vip         = true
+#     auto_allocate_floating_ip = var.floating_ip
+#     availability_zone         = var.aws_availability_zone
+#     subnet_uuid               = data.aws_subnet.terraform-subnets-0.id
+
+#     subnet {
+#       ip_addr {
+#         addr = var.aws_subnet_ip
+#         type = "V4"
+#       }
+
+#       mask = var.aws_subnet_mask
+#     }
+#   }
+
+# }
+
 variable "avi_controller" {
   description = "Avi Controller IP or Hostname"
   type        = string
@@ -90,36 +239,17 @@ variable "avi_tenant" {
   default     = "admin"
 }
 
-
-
-
-# variable "nsxt_transport_zone" {
-#   description = "Transport Zone ID for NSX-T"
-#   type        = string
-# }
-
-# variable "nsxt_overlay_segment" {
-#   description = "Overlay Segment for Avi Networks"
-#   type        = string
-# }
-
-# variable "nsxt_tier1_lr" {
-#   description = "Tier-1 Logical Router ID"
-#   type        = string
-# }
-
-# variable "nsxt_site_id" {
-#   description = "NSX-T Site ID (for multi-site deployments)"
-#   type        = string
-#   default     = "default"
-# }
-
-# variable "nsxt_mgmt_subnet_ip" {
-#   description = "Management Network Subnet IP"
-#   type        = string
-# }
-
-# variable "nsxt_mgmt_subnet_mask" {
-#   description = "Management Network Subnet Mask"
-#   type        = number
-# }
+variable "avi_mgmt_vrf_name" {}
+variable "avi_vip_vrf_name" {}
+variable "avi_mgmt_network_ip_addr" {}
+variable "avi_mgmt_network_ip_addr_mask" {}
+variable "avi_mgmt_segment_gateway" {}
+variable "avi_mgmt_segment_static_ip_begin" {}
+variable "avi_mgmt_segment_static_ip_end" {}
+variable "avi_vip_segment_ip_addr" {}
+variable "avi_vip_segment_ip_addr_mask" {}
+variable "avi_vip_segment_gateway" {}
+variable "avi_vip_segment_static_ip_begin" {}
+variable "avi_vip_segment_static_ip_end" {}
+variable "avi_health_monitor_name" {}
+variable "opsman_ca_cert" {}
