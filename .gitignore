@@ -26,5 +26,5 @@ override.tf.json
 *_override.tf.json
 
 # Ignore variables files that may contain sensitive data
-*.auto.tfvars
-*.auto.tfvars.json
+*.tfvars
+*.tfvars.json

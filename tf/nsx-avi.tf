@@ -44,7 +44,7 @@ resource "nsxt_policy_tier1_gateway" "t1_router" {
 }
 
 resource "nsxt_policy_segment" "avi_mgmt_segment" {
-  display_name        = "avi-mgmt-segment"
+  display_name        = var.avi_mgmt_segment_name
   description         = "Terraform provisioned NSX-T Segment for Avi Management"
   connectivity_path   = nsxt_policy_tier1_gateway.t1_router.path
   transport_zone_path = data.nsxt_policy_transport_zone.tz.path
@@ -54,7 +54,7 @@ resource "nsxt_policy_segment" "avi_mgmt_segment" {
 }
 
 resource "nsxt_policy_segment" "avi_vip_segment" {
-  display_name        = "avi-vip-segment"
+  display_name        = var.avi_vip_segment_name
   description         = "Terraform provisioned NSX-T Segment for Avi VIP"
   connectivity_path   = nsxt_policy_tier1_gateway.t1_router.path
   transport_zone_path = data.nsxt_policy_transport_zone.tz.path
@@ -70,7 +70,9 @@ variable "t1_router_name" {}
 variable "edge_cluster_name" {}
 variable "t0_router_name" {}
 variable "transport_zone_name" {}
+variable "avi_mgmt_segment_name" {}
 variable "avi_mgmt_segment_ip_cidr" {}
+variable "avi_vip_segment_name" {}
 variable "avi_vip_segment_ip_cidr" {}
 
 output "t1_router_id" {
