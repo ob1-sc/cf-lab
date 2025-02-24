@@ -31,3 +31,6 @@ override.tf.json
 
 *.crt 
 *.key 
+
+# produced by macs
+.DS_Store

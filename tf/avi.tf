@@ -1,16 +1,11 @@
-provider "avi" {
-  avi_controller = var.avi_controller
-  avi_username   = var.avi_username
-  avi_password   = var.avi_password
-  avi_version = "22.1.5"
-	avi_tenant     = var.avi_tenant
-}
-
 resource "avi_cloudconnectoruser" "nsxt_user" {
   name         = "nsxt-integration-user"
   nsxt_credentials {
     username = var.nsxt_username
     password = var.nsxt_password
+  }
+  lifecycle {
+    ignore_changes = [nsxt_credentials]
   }
 }
 
@@ -20,18 +15,11 @@ resource "avi_cloudconnectoruser" "vcenter_user" {
     username = var.vcenter_username
     password = var.vcenter_password
   }
+  lifecycle {
+    ignore_changes = [vcenter_credentials]
+  }
 }
 
-# resource "avi_ipamdnsproviderprofile" "ipam_vip" {
-#     name = "ipam_vip"
-#     type = "IPAMDNS_TYPE_INTERNAL"
-#     internal_profile {
-#       usable_networks {
-#         nw_ref = avi_network.avi_vip_segment.id
-#       }
-#     }
-# }
-# Create an NSX-T Cloud in Avi
 resource "avi_cloud" "nsxt_cloud" {
   name                 = var.avi_cloud_name
   vtype                = "CLOUD_NSXT"
@@ -77,7 +65,7 @@ resource "avi_vcenterserver" "vcenter" {
   cloud_ref               = avi_cloud.nsxt_cloud.id
 }
 
-# This allows enough time tfor NSX Cloud to auto-populate networks and VRF context
+# This allows enough time tfor NSX Cloud to auto-populate networks and VRF contexts
 resource "time_sleep" "wait_20_seconds" {
   depends_on = [avi_cloud.nsxt_cloud]
   create_duration = "20s"
@@ -172,6 +160,11 @@ resource "avi_network" "avi_mgmt_segment" {
     key = "cloudnetworkmode"
     value = "static"
   }
+  lifecycle {
+    # always wants to change from true to false on every terraform plan.
+    # I assume this is changed at runtime by the NSX Cloud
+    ignore_changes = [synced_from_se]
+  }
 }
 
 resource "avi_network" "avi_vip_segment" {
@@ -215,6 +208,11 @@ resource "avi_network" "avi_vip_segment" {
     key = "cloudnetworkmode"
     value = "static"
   }
+  lifecycle {
+    # always wants to change from true to false on every terraform plan.
+    # I assume this is changed at runtime by the NSX Cloud
+    ignore_changes = [synced_from_se]
+  }
 }
 
 resource "avi_healthmonitor" "web_monitor" {
@@ -235,6 +233,11 @@ resource "avi_sslkeyandcertificate" "wildcard_cert" {
     certificate = file("${path.module}/wildcard_cert.crt")
   }
   type= "SSL_CERTIFICATE_TYPE_VIRTUALSERVICE"
+
+  # because this resource is not idempotent: https://github.com/vmware/terraform-provider-avi/issues/594
+  lifecycle {
+    ignore_changes = [certificate, ca_certs, key]
+  }
 }
 resource "avi_sslkeyandcertificate" "opsman_root_ca" {
   name         = "opsman_root_ca"
@@ -242,6 +245,11 @@ resource "avi_sslkeyandcertificate" "opsman_root_ca" {
     certificate = var.opsman_ca_cert
   }
   type= "SSL_CERTIFICATE_TYPE_CA"
+
+  # because this resource is not idempotent: https://github.com/vmware/terraform-provider-avi/issues/594
+  lifecycle {
+    ignore_changes = [certificate, ca_certs, key]
+  }
 }
 
 
@@ -249,20 +257,13 @@ resource "avi_vsvip" "tas_web" {
   name = "tas-web-vip"
   cloud_ref = avi_cloud.nsxt_cloud.id
   vrf_context_ref = avi_vrfcontext.avi_vip_vrf.id
-  # tier1_lr = nsxt_policy_tier1_gateway.t1_router_avi_vip.display_name
   vip {
     vip_id                    = "0"
-    # auto_allocate_ip          = true
-    # avi_allocated_vip         = true
-    # auto_allocate_floating_ip = true
-    # availability_zone         = var.aws_availability_zone
-    # subnet_uuid               = data.aws_subnet.terraform-subnets-0.id
 
-    # TODO: using a static IP here. BUT we actually want to auto_allocate an IP. For this 
-    # you need to create an IPAM profile though. But the issue is: to create an IPAM profile, you need
-    # to reference a network ref, hence you can only do it AFTER the nsx cloud has been created. 
+    # using a static IP here as auto_allocate an IP is not possible: For this 
+    # you need to create an IPAM profile and refer it in the cloud. But the issue is: to create an IPAM profile, you need
+    # to reference a network, hence you can only do it AFTER the NSX cloud has been created. 
     # But when creating a cloud, you also need to tell it to use the IPAM profile => chicken-egg problem.
-    # posted in https://chat.google.com/room/AAAAq55Tn0s/wJahepY9r5s/wJahepY9r5s?cls=10
     ip_address {
       type = "V4"
       addr = var.tas_gorouter_vip
@@ -276,7 +277,6 @@ resource "avi_vsvip" "tas_web" {
       mask = var.avi_vip_segment_ip_addr_mask
     }
   }
-
 }
 
 
@@ -285,8 +285,13 @@ resource "avi_pool" "tas_web_pool" {
   health_monitor_refs = [avi_healthmonitor.web_monitor.id]
   cloud_ref = avi_cloud.nsxt_cloud.id
   vrf_ref = avi_vrfcontext.avi_vip_vrf.id
-  nsx_securitygroup = [ nsxt_policy_group.gorouters.display_name ]
+  nsx_securitygroup = [ nsxt_policy_group.gorouters.path ]
   inline_health_monitor = false
+
+  lifecycle {
+    # ignore servers as it gets auto-populated from NSX Groups
+    ignore_changes = [servers]
+  }
 }
 
 data "avi_applicationprofile" "system_secure_http" {
@@ -297,6 +302,7 @@ resource "avi_virtualservice" "tas" {
   name = "tas-web01"
   enabled = true
   vsvip_ref = avi_vsvip.tas_web.id
+  cloud_type = "CLOUD_NSXT"
   cloud_ref = avi_cloud.nsxt_cloud.id
   vrf_context_ref = avi_vrfcontext.avi_vip_vrf.id
   application_profile_ref = data.avi_applicationprofile.system_secure_http.id
@@ -307,41 +313,9 @@ resource "avi_virtualservice" "tas" {
   ssl_key_and_certificate_refs = [ avi_sslkeyandcertificate.wildcard_cert.id ]
   nsx_securitygroup = [ nsxt_policy_group.gorouters.display_name ]
   pool_ref = avi_pool.tas_web_pool.id
+  lifecycle {
+    ignore_changes = [services, scaleout_ecmp]
+  }
 }
 
-variable "avi_controller" {
-  description = "Avi Controller IP or Hostname"
-  type        = string
-}
 
-variable "avi_username" {
-  description = "Avi Controller Username"
-  type        = string
-}
-
-variable "avi_password" {
-  description = "Avi Controller Password"
-  type        = string
-  sensitive   = true
-}
-
-variable "avi_tenant" {
-  description = "Avi Controller Tenant Name"
-  type        = string
-  default     = "admin"
-}
-
-variable "avi_cloud_name" {}
-variable "avi_mgmt_network_ip_addr" {}
-variable "avi_mgmt_network_ip_addr_mask" {}
-variable "avi_mgmt_segment_gateway" {}
-variable "avi_mgmt_segment_static_ip_begin" {}
-variable "avi_mgmt_segment_static_ip_end" {}
-variable "avi_vip_segment_ip_addr" {}
-variable "avi_vip_segment_ip_addr_mask" {}
-variable "avi_vip_segment_gateway" {}
-variable "avi_vip_segment_static_ip_begin" {}
-variable "avi_vip_segment_static_ip_end" {}
-variable "avi_health_monitor_name" {}
-variable "opsman_ca_cert" {}
-variable "tas_gorouter_vip" {}

@@ -1,25 +1,3 @@
-terraform {
-  required_providers {
-    nsxt = {
-      source  = "vmware/nsxt"
-      version = "~> 3.0"
-    }
-    avi = {
-      source  = "vmware/avi"
-      version = "22.1.5"
-    }
-    vsphere = {
-      source = "hashicorp/vsphere"
-    }
-  }
-}
-
-provider "nsxt" {
-  host                 = var.nsxt_host
-  username             = var.nsxt_username
-  password             = var.nsxt_password
-  allow_unverified_ssl = true
-}
 
 data "nsxt_policy_edge_cluster" "edge_cluster" {
   display_name = var.edge_cluster_name
@@ -76,15 +54,9 @@ resource "nsxt_policy_segment" "avi_vip_segment" {
 resource "nsxt_policy_group" "gorouters" {
   display_name = "gorouters01"
   description  = "A NS Group for TAS Gorouters created using Terraform"
+
+  lifecycle {
+    ignore_changes = [criteria]
+  }
 }
 
-variable "nsxt_host" {}
-variable "nsxt_username" {}
-variable "nsxt_password" {}
-variable "t1_avi_mgmt_name" {}
-variable "t1_avi_vip_name" {}
-variable "edge_cluster_name" {}
-variable "t0_router_name" {}
-variable "transport_zone_name" {}
-variable "avi_mgmt_segment_name" {}
-variable "avi_vip_segment_name" {}
