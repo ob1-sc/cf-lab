@@ -22,15 +22,15 @@ resource "avi_cloudconnectoruser" "vcenter_user" {
   }
 }
 
-resource "avi_ipamdnsproviderprofile" "ipam_vip" {
-    name = "ipam_vip"
-    type = "IPAMDNS_TYPE_INTERNAL"
-    internal_profile {
-      usable_networks {
-        nw_ref = avi_network.avi_vip_segment.id
-      }
-    }
-}
+# resource "avi_ipamdnsproviderprofile" "ipam_vip" {
+#     name = "ipam_vip"
+#     type = "IPAMDNS_TYPE_INTERNAL"
+#     internal_profile {
+#       usable_networks {
+#         nw_ref = avi_network.avi_vip_segment.id
+#       }
+#     }
+# }
 # Create an NSX-T Cloud in Avi
 resource "avi_cloud" "nsxt_cloud" {
   name                 = var.avi_cloud_name
@@ -159,11 +159,19 @@ resource "avi_network" "avi_mgmt_segment" {
       type = "STATIC_IPS_FOR_VIP_AND_SE"
     }
   }
+  # The below attribute prevents Avi NSX-T Cloud from recreating a new network
   attrs {
     key = "segmentid"
     value = nsxt_policy_segment.avi_mgmt_segment.path
   }
-  # The below attribute prevents Avi NSX-T Cloud from recreating a new network
+  attrs {
+    key = "autocreated"
+    value = var.avi_cloud_name
+  }
+  attrs {
+    key = "cloudnetworkmode"
+    value = "static"
+  }
 }
 
 resource "avi_network" "avi_vip_segment" {
@@ -199,14 +207,14 @@ resource "avi_network" "avi_vip_segment" {
     key = "segmentid"
     value = nsxt_policy_segment.avi_vip_segment.path
   }
-  # attrs {
-  #   key = "autocreated"
-  #   value = var.avi_cloud_name
-  # }
-  # attrs {
-  #   key = "cloudnetworkmode"
-  #   value = "static"
-  # }
+  attrs {
+    key = "autocreated"
+    value = var.avi_cloud_name
+  }
+  attrs {
+    key = "cloudnetworkmode"
+    value = "static"
+  }
 }
 
 resource "avi_healthmonitor" "web_monitor" {
@@ -271,17 +279,34 @@ resource "avi_vsvip" "tas_web" {
 
 }
 
-resource "avi_virtualservice" "dns" {
+
+resource "avi_pool" "tas_web_pool" {
+  name = "tas-web-pool01"
+  health_monitor_refs = [avi_healthmonitor.web_monitor.id]
+  cloud_ref = avi_cloud.nsxt_cloud.id
+  vrf_ref = avi_vrfcontext.avi_vip_vrf.id
+  nsx_securitygroup = [ nsxt_policy_group.gorouters.display_name ]
+  inline_health_monitor = false
+}
+
+data "avi_applicationprofile" "system_secure_http" {
+    name = "System-Secure-HTTP"
+}
+
+resource "avi_virtualservice" "tas" {
   name = "tas-web01"
   enabled = true
   vsvip_ref = avi_vsvip.tas_web.id
   cloud_ref = avi_cloud.nsxt_cloud.id
   vrf_context_ref = avi_vrfcontext.avi_vip_vrf.id
+  application_profile_ref = data.avi_applicationprofile.system_secure_http.id
   services {
     port = 443
+    enable_ssl = true
   }
+  ssl_key_and_certificate_refs = [ avi_sslkeyandcertificate.wildcard_cert.id ]
   nsx_securitygroup = [ nsxt_policy_group.gorouters.display_name ]
-  
+  pool_ref = avi_pool.tas_web_pool.id
 }
 
 variable "avi_controller" {
