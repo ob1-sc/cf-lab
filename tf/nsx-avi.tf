@@ -76,7 +76,17 @@ resource "nsxt_policy_group" "gorouters" {
   description  = "A NS Group for TAS Gorouters created using Terraform"
 
   lifecycle {
-    ignore_changes = [criteria]
+    ignore_changes = [criteria, conjunction]
+  }
+}
+
+
+resource "nsxt_policy_group" "diego_brain" {
+  display_name = "diego_brain"
+  description  = "A NS Group for TAS Diego Brain VMs"
+
+  lifecycle {
+    ignore_changes = [criteria, conjunction]
   }
 }
 

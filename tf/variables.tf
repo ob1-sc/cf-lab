@@ -8,17 +8,17 @@ variable "avi_controller" {
 }
 
 variable "avi_username" {
-  type        = string
+  type = string
 }
 
 variable "avi_password" {
-  type        = string
-  sensitive   = true
+  type      = string
+  sensitive = true
 }
 
 variable "avi_tenant" {
-  type        = string
-  default     = "admin"
+  type    = string
+  default = "admin"
 }
 
 variable "avi_cloud_name" {
@@ -26,8 +26,12 @@ variable "avi_cloud_name" {
   type        = string
 }
 
-variable "avi_health_monitor_name" {
-  type        = string
+variable "tas_web_monitor" {
+  type = string
+}
+
+variable "tas_ssh_monitor" {
+  type = string
 }
 
 ###############################
@@ -40,15 +44,15 @@ variable "avi_mgmt_segment_name" {
 }
 
 variable "avi_mgmt_network_dhcp_enabled" {
-  type = bool
-  default = false
+  type        = bool
+  default     = false
   description = "whether to use DHCP for the Avi Management network or using static IP ranges"
 }
 
 variable "avi_mgmt_dhcp_server_address" {
   description = "The IPv4 address of the DHCP server if enabled"
-  type = string
-  default = ""
+  type        = string
+  default     = ""
 }
 variable "avi_mgmt_network_ip_addr" {
   description = "Avi Management Network IP Address"
@@ -120,12 +124,12 @@ variable "nsxt_host" {
 }
 
 variable "nsxt_username" {
-  type        = string
+  type = string
 }
 
 variable "nsxt_password" {
-  type        = string
-  sensitive   = true
+  type      = string
+  sensitive = true
 }
 
 variable "t1_avi_mgmt_name" {

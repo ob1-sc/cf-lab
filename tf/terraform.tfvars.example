@@ -1,6 +1,7 @@
 avi_cloud_name = ""
 avi_controller = ""
-avi_health_monitor_name = ""
+tas_web_monitor = ""
+tas_ssh_monitor = ""
 avi_mgmt_network_ip_addr = ""
 avi_mgmt_network_ip_addr_mask = ""
 avi_mgmt_segment_gateway = ""

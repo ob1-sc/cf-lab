@@ -68,7 +68,7 @@ resource "avi_vcenterserver" "vcenter" {
 }
 
 resource "avi_vrfcontext" "avi_mgmt_vrf" {
-  count     = var.avi_mgmt_network_dhcp_enabled ? 1 : 0
+  count     = var.avi_mgmt_network_dhcp_enabled ? 0 : 1
   name      = nsxt_policy_tier1_gateway.t1_router_avi_mgmt.display_name
   cloud_ref = avi_cloud.nsxt_cloud.id
   static_routes {
@@ -116,7 +116,7 @@ resource "avi_vrfcontext" "avi_vip_vrf" {
 
 resource "avi_network" "avi_mgmt_segment" {
   name            = var.avi_mgmt_segment_name
-  vrf_context_ref = var.avi_mgmt_network_dhcp_enabled ? null : avi_vrfcontext.avi_mgmt_vrf.id
+  vrf_context_ref = var.avi_mgmt_network_dhcp_enabled ? null : avi_vrfcontext.avi_mgmt_vrf[0].id
   cloud_ref       = avi_cloud.nsxt_cloud.id
   dhcp_enabled    = var.avi_mgmt_network_dhcp_enabled
   configured_subnets {
@@ -213,7 +213,7 @@ resource "avi_network" "avi_vip_segment" {
 }
 
 resource "avi_healthmonitor" "web_monitor" {
-  name         = var.avi_health_monitor_name
+  name         = var.tas_web_monitor
   type         = "HEALTH_MONITOR_HTTP"
   monitor_port = 8080
 
@@ -221,6 +221,12 @@ resource "avi_healthmonitor" "web_monitor" {
     http_request       = "GET /health HTTP/1.0"
     http_response_code = ["HTTP_2XX"]
   }
+}
+
+resource "avi_healthmonitor" "cf_ssh_monitor" {
+  name         = var.tas_ssh_monitor
+  type         = "HEALTH_MONITOR_TCP"
+  monitor_port = 2222
 }
 
 resource "avi_sslkeyandcertificate" "wildcard_cert" {
@@ -291,6 +297,21 @@ resource "avi_pool" "tas_web_pool" {
   }
 }
 
+resource "avi_pool" "tas_ssh_pool" {
+  name                  = "tas-ssh-pool01"
+  health_monitor_refs   = [avi_healthmonitor.cf_ssh_monitor.id]
+  cloud_ref             = avi_cloud.nsxt_cloud.id
+  vrf_ref               = avi_vrfcontext.avi_vip_vrf.id
+  nsx_securitygroup     = [nsxt_policy_group.diego_brain.path]
+  inline_health_monitor = false
+  default_server_port   = 2222
+
+  lifecycle {
+    # ignore servers as it gets auto-populated from NSX Groups
+    ignore_changes = [servers]
+  }
+}
+
 data "avi_applicationprofile" "system_secure_http" {
   name = "System-Secure-HTTP"
 }
@@ -310,6 +331,28 @@ resource "avi_virtualservice" "tas" {
   ssl_key_and_certificate_refs = [avi_sslkeyandcertificate.wildcard_cert.id]
   nsx_securitygroup            = [nsxt_policy_group.gorouters.display_name]
   pool_ref                     = avi_pool.tas_web_pool.id
+  lifecycle {
+    ignore_changes = [services, scaleout_ecmp]
+  }
+}
+
+data "avi_applicationprofile" "system_l4_application" {
+  name = "System-L4-Application"
+}
+
+resource "avi_virtualservice" "cf_ssh" {
+  name                    = "tas-ssh01"
+  enabled                 = true
+  vsvip_ref               = avi_vsvip.tas_web.id
+  cloud_type              = "CLOUD_NSXT"
+  cloud_ref               = avi_cloud.nsxt_cloud.id
+  vrf_context_ref         = avi_vrfcontext.avi_vip_vrf.id
+  application_profile_ref = data.avi_applicationprofile.system_l4_application.id
+  services {
+    port = 2222
+  }
+  nsx_securitygroup = [nsxt_policy_group.diego_brain.display_name]
+  pool_ref          = avi_pool.tas_ssh_pool.id
   lifecycle {
     ignore_changes = [services, scaleout_ecmp]
   }

@@ -20,7 +20,6 @@ This Terraform script
 Things to be worked on to extend the Terraform scripts:
 
 - use a Terraform [remote Backend](https://developer.hashicorp.com/terraform/language/backend)
-- add Virtual Server to `cf ssh` into Diego Brains on port 2222
 
 ## Usage
 
