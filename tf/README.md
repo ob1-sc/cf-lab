@@ -19,7 +19,6 @@ This Terraform script
 
 Things to be worked on to extend the Terraform scripts:
 
-- use DHCP enabled Avi Management network (note: DHCP can't be used for the Avi Vip Network)
 - use a Terraform [remote Backend](https://developer.hashicorp.com/terraform/language/backend)
 
 ## Usage
