@@ -31,15 +31,35 @@ resource "nsxt_policy_tier1_gateway" "t1_router_avi_vip" {
   tier0_path                = data.nsxt_policy_tier0_gateway.t0_router.path
 }
 
+resource "nsxt_policy_dhcp_server" "dhcp_server_avi_mgmt" {
+  count = var.avi_mgmt_network_dhcp_enabled ? 1 : 0
+  display_name  = "dhcp-server-avi-mgmt-network"
+  lease_time    = 86400
+  edge_cluster_path = data.nsxt_policy_edge_cluster.edge_cluster.path
+  server_addresses = ["${var.avi_mgmt_dhcp_server_address}/${var.avi_mgmt_network_ip_addr_mask}"]
+}
+
 resource "nsxt_policy_segment" "avi_mgmt_segment" {
+  depends_on = [ nsxt_policy_dhcp_server.dhcp_server_avi_mgmt ]
   display_name        = var.avi_mgmt_segment_name
   description         = "Terraform provisioned NSX-T Segment for Avi Management"
   connectivity_path   = nsxt_policy_tier1_gateway.t1_router_avi_mgmt.path
   transport_zone_path = data.nsxt_policy_transport_zone.tz.path
+  dhcp_config_path = var.avi_mgmt_network_dhcp_enabled ? nsxt_policy_dhcp_server.dhcp_server_avi_mgmt[0].path : null
   subnet {
     cidr = "${var.avi_mgmt_segment_gateway}/${var.avi_mgmt_network_ip_addr_mask}"
+    dhcp_ranges = var.avi_mgmt_network_dhcp_enabled ? ["${var.avi_mgmt_segment_static_ip_begin}-${var.avi_mgmt_segment_static_ip_end}"] : null
+    dynamic "dhcp_v4_config" {
+      for_each = var.avi_mgmt_network_dhcp_enabled ? [1] : []
+      content {
+        server_address = "${var.avi_mgmt_dhcp_server_address}/${var.avi_mgmt_network_ip_addr_mask}"
+        lease_time     = 86400
+      }
+    }
   }
 }
+
+
 
 resource "nsxt_policy_segment" "avi_vip_segment" {
   display_name        = var.avi_vip_segment_name

@@ -39,6 +39,17 @@ variable "avi_mgmt_segment_name" {
   type        = string
 }
 
+variable "avi_mgmt_network_dhcp_enabled" {
+  type = bool
+  default = false
+  description = "whether to use DHCP for the Avi Management network or using static IP ranges"
+}
+
+variable "avi_mgmt_dhcp_server_address" {
+  description = "The IPv4 address of the DHCP server if enabled"
+  type = string
+  default = ""
+}
 variable "avi_mgmt_network_ip_addr" {
   description = "Avi Management Network IP Address"
   type        = string
