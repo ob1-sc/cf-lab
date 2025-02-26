@@ -14,6 +14,14 @@ This Terraform script
 
 - Avi Controller deployed and configured with an Avi Enterprise License
 - NSX Tier-0, Edge Cluster and a Transport Zone preconfigured
+- Import Avi Controller OVA to a Content Library:
+
+    ```shell
+    # upload Avi Controller OVA from local filesystem to vCenter
+    govc datastore.upload /path/to/your.ova your-folder/your.ova
+    # import the OVA to a Content Library
+    govc library.import -n "your-template-name" your-content-library "your-folder/your.ova"
+    ```
 
 ## Open Topics
 

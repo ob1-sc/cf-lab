@@ -34,3 +34,6 @@ override.tf.json
 
 # produced by macs
 .DS_Store
+
+# avi license files
+*.lic
