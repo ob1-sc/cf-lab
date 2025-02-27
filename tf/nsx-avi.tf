@@ -32,22 +32,22 @@ resource "nsxt_policy_tier1_gateway" "t1_router_avi_vip" {
 }
 
 resource "nsxt_policy_dhcp_server" "dhcp_server_avi_mgmt" {
-  count = var.avi_mgmt_network_dhcp_enabled ? 1 : 0
-  display_name  = "dhcp-server-avi-mgmt-network"
-  lease_time    = 86400
+  count             = var.avi_mgmt_network_dhcp_enabled ? 1 : 0
+  display_name      = "dhcp-server-avi-mgmt-network"
+  lease_time        = 86400
   edge_cluster_path = data.nsxt_policy_edge_cluster.edge_cluster.path
-  server_addresses = ["${var.avi_mgmt_dhcp_server_address}/${var.avi_mgmt_network_ip_addr_mask}"]
+  server_addresses  = ["${var.avi_mgmt_dhcp_server_address}/${var.avi_mgmt_network_ip_addr_mask}"]
 }
 
 resource "nsxt_policy_segment" "avi_mgmt_segment" {
-  depends_on = [ nsxt_policy_dhcp_server.dhcp_server_avi_mgmt ]
+  depends_on          = [nsxt_policy_dhcp_server.dhcp_server_avi_mgmt]
   display_name        = var.avi_mgmt_segment_name
   description         = "Terraform provisioned NSX-T Segment for Avi Management"
   connectivity_path   = nsxt_policy_tier1_gateway.t1_router_avi_mgmt.path
   transport_zone_path = data.nsxt_policy_transport_zone.tz.path
-  dhcp_config_path = var.avi_mgmt_network_dhcp_enabled ? nsxt_policy_dhcp_server.dhcp_server_avi_mgmt[0].path : null
+  dhcp_config_path    = var.avi_mgmt_network_dhcp_enabled ? nsxt_policy_dhcp_server.dhcp_server_avi_mgmt[0].path : null
   subnet {
-    cidr = "${var.avi_mgmt_segment_gateway}/${var.avi_mgmt_network_ip_addr_mask}"
+    cidr        = "${var.avi_mgmt_segment_gateway}/${var.avi_mgmt_network_ip_addr_mask}"
     dhcp_ranges = var.avi_mgmt_network_dhcp_enabled ? ["${var.avi_mgmt_segment_static_ip_begin}-${var.avi_mgmt_segment_static_ip_end}"] : null
     dynamic "dhcp_v4_config" {
       for_each = var.avi_mgmt_network_dhcp_enabled ? [1] : []
@@ -75,6 +75,16 @@ resource "nsxt_policy_group" "gorouters" {
   display_name = "gorouters01"
   description  = "A NS Group for TAS Gorouters created using Terraform"
 
+  # it might be useful to also add a criteria for the foundation name and let BOSH director add a tag
+  # with the foundation name to every VM using Identification Tags: https://techdocs.broadcom.com/us/en/vmware-tanzu/platform/tanzu-operations-manager/3-0/tanzu-ops-manager/vsphere-config.html#:~:text=Enter%20your%20comma%2Dseparated%20custom%20Identification%20Tags.
+  criteria {
+    condition {
+      key         = "Tag"
+      member_type = "SegmentPort"
+      operator    = "EQUALS"
+      value       = "router"
+    }
+  }
   lifecycle {
     ignore_changes = [criteria, conjunction]
   }
@@ -84,6 +94,17 @@ resource "nsxt_policy_group" "gorouters" {
 resource "nsxt_policy_group" "diego_brain" {
   display_name = "diego_brain"
   description  = "A NS Group for TAS Diego Brain VMs"
+
+  # it might be useful to also add a criteria for the foundation name and let BOSH director add a tag
+  # with the foundation name to every VM using Identification Tags: https://techdocs.broadcom.com/us/en/vmware-tanzu/platform/tanzu-operations-manager/3-0/tanzu-ops-manager/vsphere-config.html#:~:text=Enter%20your%20comma%2Dseparated%20custom%20Identification%20Tags.
+  criteria {
+    condition {
+      key         = "Tag"
+      member_type = "SegmentPort"
+      operator    = "EQUALS"
+      value       = "control"
+    }
+  }
 
   lifecycle {
     ignore_changes = [criteria, conjunction]

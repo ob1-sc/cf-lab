@@ -92,7 +92,7 @@ resource "null_resource" "add_backup_passphrase" {
   }
 
   provisioner "local-exec" {
-    command = "bash add_backup_passphrase.sh ${var.avi_tenant} ${var.avi_version} ${var.avi_username} ${var.avi_password} ${var.avi_controller} ${data.avi_backupconfiguration.system_backup_configuration.uuid} ${var.avi_password}"
+    command = "bash add_backup_passphrase.sh ${var.avi_tenant} ${var.avi_version} ${var.avi_username} '${var.avi_password}' ${var.avi_controller} ${data.avi_backupconfiguration.system_backup_configuration.uuid} '${var.avi_password}'"
   }
 }
 

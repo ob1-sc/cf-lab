@@ -15,7 +15,6 @@ This Terraform script
 - Avi Controller deployed and configured with an Avi Enterprise License
 - NSX Tier-0, Edge Cluster and a Transport Zone preconfigured
 
-
 ## Open Topics
 
 Things to be worked on to extend the Terraform scripts:
@@ -65,7 +64,7 @@ In order to destroy everything:
 
 ## Known Issues
 
-### Destroy fails for avi_cloud because it is referred by a vCenterServer object
+### Destroy fails for avi_cloud because it is referred by a VCenterServer object
 
 The error is
 
