@@ -4,15 +4,16 @@ This Terraform script
 
 - deploys a NSX Tier-1 Gateway and Segment for the Avi Management Network
 - deploys a NSX Tier-1 Gateway and Segment for the Avi VIP Network
-- deploys a NSX Group used for Gorouter VMs
+- deploys a NSX Group used for Gorouter VMs and a group for the Control VM for `cf ssh` (this guide uses TAS Small Footprint where the Diego brain runs on the Control VM, if using full TAS, change the [membership criteria](./nsx-avi.tf#L100-L107) accordingly)
 - configures a vSphere Content Library to be used by Avi for the Service Engine VMs
-- configures Avi NSX Cloud with Networks using static IP addresses for VIPs and SEs (Avi Management Network can also be used with DHCP enabled, for this the Terraform script has to be adopted accordingly)
-- imports TAS Gorouter SSL Certificates and Opsman Root CA
-- creates a Virtual Server with a static VIP and a Pool consisting of the Gorouter VMs
+- deploys Avi Controller on vSphere and adds a License
+- configures Avi NSX Cloud with Networks
+- imports TAS Gorouter SSL Certificates and Opsman Root CA to Avi
+- creates a Virtual Server with a static VIP and a Pool consisting for the Gorouters and for `cf ssh`
 
 ## Prerequisites
 
-- Avi Controller deployed and configured with an Avi Enterprise License
+- an empty Content Library to store the Avi Controller OVA
 - NSX Tier-0, Edge Cluster and a Transport Zone preconfigured
 
 ## Open Topics
