@@ -14,14 +14,7 @@ This Terraform script
 
 - Avi Controller deployed and configured with an Avi Enterprise License
 - NSX Tier-0, Edge Cluster and a Transport Zone preconfigured
-- Import Avi Controller OVA to a Content Library:
 
-    ```shell
-    # upload Avi Controller OVA from local filesystem to vCenter
-    govc datastore.upload /path/to/your.ova your-folder/your.ova
-    # import the OVA to a Content Library
-    govc library.import -n "your-template-name" your-content-library "your-folder/your.ova"
-    ```
 
 ## Open Topics
 
@@ -31,20 +24,43 @@ Things to be worked on to extend the Terraform scripts:
 
 ## Usage
 
-### Deployment 
+### Deployment
 
-Copy the [terraform.tfvars.example](./terraform.tfvars.example) and create your `.tfvars` file with all parameters included and then execute the script:
+#### Deploy Avi Controller on vSphere
 
-```shell
-terraform apply
-```
+1. navigate to [controller-deployment](./controller-deployment/)
+1. Import Avi Controller OVA to a Content Library:
+
+    ```shell
+    # upload Avi Controller OVA from local filesystem to vCenter
+    govc datastore.upload /path/to/your.ova your-folder/your.ova
+    # import the OVA to a Content Library
+    govc library.import -n "your-template-name" your-content-library "your-folder/your.ova"
+    ```
+
+1. Copy the [terraform.tfvars.example](./controller-deployment/terraform.tfvars.example) and create your `.tfvars` file with your parameters
+1. Run Terraform:
+
+    ```shell
+    terraform apply
+    ```
+
+#### Create Avi Load Balancer for TAS
+
+1. Copy the [terraform.tfvars.example](./terraform.tfvars.example) and create your `.tfvars` file with your parameters
+1. Create a certificate file `tas.crt` and related private key file `tas.key` with the TLS certs you use for the Gorouters and store them in this directory
+1. Run Terraform:
+
+    ```shell
+    terraform apply
+    ```
 
 ### Destroy
 
 In order to destroy everything:
 
 1. Navigate to Avi Controller UI to `Infrastructure -> Cloud Resources -> Service Engine`
-1. select the cloud from the dropdown and delete all Service Engines assiciated with this cloud
+1. select the cloud from the dropdown and delete all Service Engines associated with this cloud
 1. run `terraform destroy`
 
 ## Known Issues
@@ -53,7 +69,7 @@ In order to destroy everything:
 
 The error is
 
-```
+```txt
 Error: Encountered an error on DELETE request to URL https://172.20.16.2/api/cloud/cloud-cef9f650-03e9-43e5-810f-31798ebd639f: HTTP code: 400; error from Controller: map[error:Cannot delete, object is referred by: [VCenterServer vcenter]]
 ```
 

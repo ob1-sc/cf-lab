@@ -14,13 +14,6 @@ terraform {
   }
 }
 
-provider "nsxt" {
-  host                 = var.nsxt_host
-  username             = var.nsxt_username
-  password             = var.nsxt_password
-  allow_unverified_ssl = true
-}
-
 provider "avi" {
   avi_controller = var.avi_controller
   avi_username   = var.avi_username

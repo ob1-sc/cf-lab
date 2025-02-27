@@ -84,11 +84,12 @@ resource "null_resource" "wait_avi_controller" {
 
 # wait 10s as otherwise the controller is not yet ready to create a user
 resource "time_sleep" "wait_10_seconds" {
-  depends_on = [vsphere_virtual_machine.avi_controller]
+  depends_on = [null_resource.wait_avi_controller]
   create_duration = "10s"
 }
 
 
+# change default password of Avi admin user
 resource "avi_useraccount" "avi_user" {
   depends_on = [time_sleep.wait_10_seconds]
   username     = var.avi_tenant

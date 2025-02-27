@@ -30,8 +30,17 @@ provider "avi" {
 }
 
 provider "vsphere" {
-  user                 = var.vcenter_username
-  password             = var.vcenter_password
-  vsphere_server       = var.vcenter_host
+  user                 = var.avi_controller_vcenter_username
+  password             = var.avi_controller_vcenter_password
+  vsphere_server       = var.avi_controller_vcenter_host
   allow_unverified_ssl = true
+  alias = "avi_controller"
+}
+
+provider "vsphere" {
+  user                 = var.data_plane_vcenter_username
+  password             = var.data_plane_vcenter_password
+  vsphere_server       = var.data_plane_vcenter_host
+  allow_unverified_ssl = true
+  alias = "dataplane"
 }

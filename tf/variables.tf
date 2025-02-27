@@ -2,6 +2,15 @@
 # Avi general variables      #
 ##############################
 
+variable "avi_version" {
+  type        = string
+}
+
+variable "avi_license_key" {
+  type        = string
+  sensitive = true
+}
+
 variable "avi_controller" {
   description = "Avi Controller IP or Hostname"
   type        = string
@@ -161,38 +170,54 @@ variable "transport_zone_name" {
 # vSphere Variables #
 ###########################
 
-variable "vcenter_datacenter" {
-  description = "vCenter Datacenter for Avi Integration"
-  type        = string
-}
-
-variable "vcenter_cluster" {
-  description = "vCenter Cluster for Avi Integration"
-  type        = string
-}
-
-variable "vcenter_datastore" {
-  description = "vCenter Datastore for Avi Integration"
-  type        = string
-}
-
-variable "vcenter_host" {
+variable "avi_controller_vcenter_host" {
   description = "vCenter Host for Avi Integration"
   type        = string
 }
 
-variable "vcenter_username" {
+variable "avi_controller_vcenter_username" {
   description = "vCenter Username for Avi Integration"
   type        = string
 }
 
-variable "vcenter_password" {
+variable "avi_controller_vcenter_password" {
   description = "vCenter Password for Avi Integration"
   type        = string
   sensitive   = true
 }
 
-variable "vcenter_content_library_avi" {
+variable "data_plane_vcenter_datacenter" {
+  description = "vCenter Datacenter for Avi Integration"
+  type        = string
+}
+
+variable "data_plane_vcenter_cluster" {
+  description = "vCenter Cluster for Avi Integration"
+  type        = string
+}
+
+variable "data_plane_vcenter_datastore" {
+  description = "vCenter Datastore for Avi Integration"
+  type        = string
+}
+
+variable "data_plane_vcenter_host" {
+  description = "vCenter Host for Avi Integration"
+  type        = string
+}
+
+variable "data_plane_vcenter_username" {
+  description = "vCenter Username for Avi Integration"
+  type        = string
+}
+
+variable "data_plane_vcenter_password" {
+  description = "vCenter Password for Avi Integration"
+  type        = string
+  sensitive   = true
+}
+
+variable "data_plane_vcenter_content_library_avi" {
   description = "name of Content Library to be created for Avi"
   type        = string
 }
