@@ -86,7 +86,7 @@ resource "nsxt_policy_group" "gorouters" {
     }
   }
   lifecycle {
-    ignore_changes = [criteria, conjunction]
+    ignore_changes = [conjunction]
   }
 }
 
@@ -107,7 +107,27 @@ resource "nsxt_policy_group" "diego_brain" {
   }
 
   lifecycle {
-    ignore_changes = [criteria, conjunction]
+    ignore_changes = [conjunction]
+  }
+}
+
+resource "nsxt_policy_group" "tcp_router" {
+  display_name = "tcp_router"
+  description  = "A NS Group for TCP Router VMs"
+
+  # it might be useful to also add a criteria for the foundation name and let BOSH director add a tag
+  # with the foundation name to every VM using Identification Tags: https://techdocs.broadcom.com/us/en/vmware-tanzu/platform/tanzu-operations-manager/3-0/tanzu-ops-manager/vsphere-config.html#:~:text=Enter%20your%20comma%2Dseparated%20custom%20Identification%20Tags.
+  criteria {
+    condition {
+      key         = "Tag"
+      member_type = "SegmentPort"
+      operator    = "EQUALS"
+      value       = "tcp_router"
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [conjunction]
   }
 }
 

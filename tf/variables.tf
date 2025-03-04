@@ -3,11 +3,11 @@
 ##############################
 
 variable "avi_version" {
-  type        = string
+  type = string
 }
 
 variable "avi_license_key" {
-  type        = string
+  type      = string
   sensitive = true
 }
 
@@ -35,12 +35,31 @@ variable "avi_cloud_name" {
   type        = string
 }
 
+variable "avi_cloud_obj_name_prefix" {
+  type    = string
+  default = "nsx-avi-automated"
+}
+
 variable "tas_web_monitor" {
+  type = string
+}
+
+variable "tas_tcp_monitor" {
   type = string
 }
 
 variable "tas_ssh_monitor" {
   type = string
+}
+
+variable "avi_nsx_usercredentials_name" {
+  type    = string
+  default = "nsxt-integration-user"
+}
+
+variable "avi_vcenter_usercredentials_name" {
+  type    = string
+  default = "vcenter-integration-user"
 }
 
 ###############################
@@ -233,5 +252,10 @@ variable "opsman_ca_cert" {
 
 variable "tas_gorouter_vip" {
   description = "TAS GoRouter VIP Address"
+  type        = string
+}
+
+variable "tas_tcp_vip" {
+  description = "TAS TCP Router VIP Address"
   type        = string
 }

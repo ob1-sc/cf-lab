@@ -48,6 +48,7 @@ resource "avi_systemconfiguration" "controller" {
   }
 
   portal_configuration {
+    # TODO: improve that to not allow basic auth => more secure
     allow_basic_authentication = true
   }
 
@@ -98,7 +99,7 @@ resource "null_resource" "add_backup_passphrase" {
 
 resource "avi_cloudconnectoruser" "nsxt_user" {
   depends_on = [avi_systemconfiguration.controller]
-  name = "nsxt-integration-user"
+  name = var.avi_nsx_usercredentials_name
   nsxt_credentials {
     username = var.nsxt_username
     password = var.nsxt_password
@@ -110,7 +111,7 @@ resource "avi_cloudconnectoruser" "nsxt_user" {
 
 resource "avi_cloudconnectoruser" "vcenter_user" {
   depends_on = [avi_systemconfiguration.controller]
-  name = "vcenter-integration-user"
+  name = var.avi_vcenter_usercredentials_name
   vcenter_credentials {
     username = var.data_plane_vcenter_username
     password = var.data_plane_vcenter_password
@@ -125,7 +126,7 @@ resource "avi_cloud" "nsxt_cloud" {
   name             = var.avi_cloud_name
   vtype            = "CLOUD_NSXT"
   # maintenance_mode = "false"
-  obj_name_prefix  = "nsx-avi-automated"
+  obj_name_prefix  = var.avi_cloud_obj_name_prefix
 
   nsxt_configuration {
     nsxt_url             = var.nsxt_host
@@ -329,6 +330,18 @@ resource "avi_healthmonitor" "cf_ssh_monitor" {
   monitor_port = 2222
 }
 
+
+resource "avi_healthmonitor" "tcp_monitor" {
+  name         = var.tas_tcp_monitor
+  type         = "HEALTH_MONITOR_HTTP"
+  monitor_port = 80
+
+  http_monitor {
+    http_request       = "GET /health HTTP/1.0"
+    http_response_code = ["HTTP_2XX"]
+  }
+}
+
 resource "avi_sslkeyandcertificate" "wildcard_cert" {
   name = "tas-wildcard-cert"
   key  = file("${path.module}/tas.key")
@@ -355,6 +368,32 @@ resource "avi_sslkeyandcertificate" "opsman_root_ca" {
   }
 }
 
+resource "avi_sslkeyandcertificate" "postgres_ssl" {
+  name = "postgres-ssl-cert"
+  key  = file("${path.module}/postgres.key")
+  certificate {
+    certificate = file("${path.module}/postgres.crt")
+  }
+  type = "SSL_CERTIFICATE_TYPE_VIRTUALSERVICE"
+
+  # because this resource is not idempotent: https://github.com/vmware/terraform-provider-avi/issues/594
+  lifecycle {
+    ignore_changes = [certificate, ca_certs, key]
+  }
+}
+resource "avi_sslkeyandcertificate" "postgres_ca_cert" {
+  name = "postgres_ca"
+  certificate {
+    certificate = file("${path.module}/postgres_ca.crt")
+  }
+  type = "SSL_CERTIFICATE_TYPE_CA"
+
+  # because this resource is not idempotent: https://github.com/vmware/terraform-provider-avi/issues/594
+  lifecycle {
+    ignore_changes = [certificate, ca_certs, key]
+  }
+}
+
 
 resource "avi_vsvip" "tas_web" {
   name            = "tas-web-vip"
@@ -370,6 +409,32 @@ resource "avi_vsvip" "tas_web" {
     ip_address {
       type = "V4"
       addr = var.tas_gorouter_vip
+    }
+    subnet {
+      ip_addr {
+        addr = var.avi_vip_segment_ip_addr
+        type = "V4"
+      }
+
+      mask = var.avi_vip_segment_ip_addr_mask
+    }
+  }
+}
+
+resource "avi_vsvip" "tas_tcp" {
+  name            = "tas-tcp-vip"
+  cloud_ref       = avi_cloud.nsxt_cloud.id
+  vrf_context_ref = avi_vrfcontext.avi_vip_vrf.id
+  vip {
+    vip_id = "0"
+
+    # using a static IP here as auto_allocate an IP is not possible: For this 
+    # you need to create an IPAM profile and refer it in the cloud. But the issue is: to create an IPAM profile, you need
+    # to reference a network, hence you can only do it AFTER the NSX cloud has been created. 
+    # But when creating a cloud, you also need to tell it to use the IPAM profile => chicken-egg problem.
+    ip_address {
+      type = "V4"
+      addr = var.tas_tcp_vip
     }
     subnet {
       ip_addr {
@@ -410,6 +475,36 @@ resource "avi_pool" "tas_ssh_pool" {
     # ignore servers as it gets auto-populated from NSX Groups
     ignore_changes = [servers]
   }
+}
+
+resource "avi_pool" "postgres_18000" {
+  name                  = "postgres_18000"
+  health_monitor_refs   = [avi_healthmonitor.tcp_monitor.id]
+  cloud_ref             = avi_cloud.nsxt_cloud.id
+  vrf_ref               = avi_vrfcontext.avi_vip_vrf.id
+  nsx_securitygroup     = [nsxt_policy_group.tcp_router.path]
+  inline_health_monitor = false
+  default_server_port   = 18000
+
+  # lifecycle {
+  #   # ignore servers as it gets auto-populated from NSX Groups
+  #   ignore_changes = [servers]
+  # }
+}
+
+resource "avi_pool" "postgres_18001" {
+  name                  = "postgres_18001"
+  health_monitor_refs   = [avi_healthmonitor.tcp_monitor.id]
+  cloud_ref             = avi_cloud.nsxt_cloud.id
+  vrf_ref               = avi_vrfcontext.avi_vip_vrf.id
+  nsx_securitygroup     = [nsxt_policy_group.tcp_router.path]
+  inline_health_monitor = false
+  default_server_port   = 18001
+
+  # lifecycle {
+  #   # ignore servers as it gets auto-populated from NSX Groups
+  #   ignore_changes = [servers]
+  # }
 }
 
 data "avi_applicationprofile" "system_secure_http" {
@@ -456,6 +551,43 @@ resource "avi_virtualservice" "cf_ssh" {
   lifecycle {
     ignore_changes = [services, scaleout_ecmp]
   }
+}
+
+resource "avi_virtualservice" "postgres_18000" {
+  name                    = "postgres-18000"
+  enabled                 = true
+  vsvip_ref               = avi_vsvip.tas_tcp.id
+  cloud_type              = "CLOUD_NSXT"
+  cloud_ref               = avi_cloud.nsxt_cloud.id
+  vrf_context_ref         = avi_vrfcontext.avi_vip_vrf.id
+  application_profile_ref = data.avi_applicationprofile.system_l4_application.id
+  services {
+    port = 18000
+  }
+  nsx_securitygroup = [nsxt_policy_group.tcp_router.display_name]
+  pool_ref          = avi_pool.postgres_18000.id
+  # lifecycle {
+  #   ignore_changes = [services, scaleout_ecmp]
+  # }
+}
+
+
+resource "avi_virtualservice" "postgres_ssl" {
+  name                    = "tas-postgres-ssl"
+  enabled                 = true
+  vsvip_ref               = avi_vsvip.tas_tcp.id
+  cloud_type              = "CLOUD_NSXT"
+  cloud_ref               = avi_cloud.nsxt_cloud.id
+  vrf_context_ref         = avi_vrfcontext.avi_vip_vrf.id
+  application_profile_ref = data.avi_applicationprofile.system_l4_application.id
+  services {
+    port = 18001
+  }
+  nsx_securitygroup = [nsxt_policy_group.tcp_router.display_name]
+  pool_ref          = avi_pool.postgres_18001.id
+  # lifecycle {
+  #   ignore_changes = [services, scaleout_ecmp]
+  # }
 }
 
 
