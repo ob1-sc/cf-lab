@@ -368,33 +368,6 @@ resource "avi_sslkeyandcertificate" "opsman_root_ca" {
   }
 }
 
-resource "avi_sslkeyandcertificate" "postgres_ssl" {
-  name = "postgres-ssl-cert"
-  key  = file("${path.module}/postgres.key")
-  certificate {
-    certificate = file("${path.module}/postgres.crt")
-  }
-  type = "SSL_CERTIFICATE_TYPE_VIRTUALSERVICE"
-
-  # because this resource is not idempotent: https://github.com/vmware/terraform-provider-avi/issues/594
-  lifecycle {
-    ignore_changes = [certificate, ca_certs, key]
-  }
-}
-resource "avi_sslkeyandcertificate" "postgres_ca_cert" {
-  name = "postgres_ca"
-  certificate {
-    certificate = file("${path.module}/postgres_ca.crt")
-  }
-  type = "SSL_CERTIFICATE_TYPE_CA"
-
-  # because this resource is not idempotent: https://github.com/vmware/terraform-provider-avi/issues/594
-  lifecycle {
-    ignore_changes = [certificate, ca_certs, key]
-  }
-}
-
-
 resource "avi_vsvip" "tas_web" {
   name            = "tas-web-vip"
   cloud_ref       = avi_cloud.nsxt_cloud.id
@@ -566,9 +539,9 @@ resource "avi_virtualservice" "postgres_18000" {
   }
   nsx_securitygroup = [nsxt_policy_group.tcp_router.display_name]
   pool_ref          = avi_pool.postgres_18000.id
-  # lifecycle {
-  #   ignore_changes = [services, scaleout_ecmp]
-  # }
+  lifecycle {
+    ignore_changes = [services, scaleout_ecmp]
+  }
 }
 
 
@@ -585,9 +558,9 @@ resource "avi_virtualservice" "postgres_ssl" {
   }
   nsx_securitygroup = [nsxt_policy_group.tcp_router.display_name]
   pool_ref          = avi_pool.postgres_18001.id
-  # lifecycle {
-  #   ignore_changes = [services, scaleout_ecmp]
-  # }
+  lifecycle {
+    ignore_changes = [services, scaleout_ecmp]
+  }
 }
 
 
