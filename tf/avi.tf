@@ -338,3 +338,29 @@ resource "avi_sslkeyandcertificate" "opsman_root_ca" {
     ignore_changes = [certificate, ca_certs, key]
   }
 }
+
+resource "avi_sslkeyandcertificate" "tcp_router_server_cert" {
+  name = "tcp.172.30.7.140.nip.io"
+  key  = file("${path.module}/tcp.172.30.7.140.nip.io.key")
+  certificate {
+    certificate = file("${path.module}/tcp.172.30.7.140.nip.io.crt")
+  }
+  type = "SSL_CERTIFICATE_TYPE_VIRTUALSERVICE"
+
+  # because this resource is not idempotent: https://github.com/vmware/terraform-provider-avi/issues/594
+  lifecycle {
+    ignore_changes = [certificate, ca_certs, key]
+  }
+}
+resource "avi_sslkeyandcertificate" "tcp_router_ca_cert" {
+  name = "ca-tcp.172.30.7.140.nip.io"
+  certificate {
+    certificate = file("${path.module}/ca-tcp.172.30.7.140.nip.io.crt")
+  }
+  type = "SSL_CERTIFICATE_TYPE_CA"
+
+  # because this resource is not idempotent: https://github.com/vmware/terraform-provider-avi/issues/594
+  lifecycle {
+    ignore_changes = [certificate, ca_certs, key]
+  }
+}

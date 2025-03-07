@@ -143,6 +143,7 @@ resource "avi_pool" "rabbit_17001" {
   nsx_securitygroup     = [nsxt_policy_group.tcp_router.path]
   inline_health_monitor = false
   default_server_port   = 17001
+  ssl_profile_ref = data.avi_sslprofile.system_standard.id
 
   lifecycle {
     # ignore servers as it gets auto-populated from NSX Groups
@@ -157,10 +158,12 @@ resource "avi_virtualservice" "rabbit_17001" {
   cloud_type              = "CLOUD_NSXT"
   cloud_ref               = avi_cloud.nsxt_cloud.id
   vrf_context_ref         = avi_vrfcontext.avi_vip_vrf.id
-  application_profile_ref = data.avi_applicationprofile.system_l4_application.id
+  application_profile_ref = data.avi_applicationprofile.system_ssl_application.id
   services {
     port = 17001
+    enable_ssl = true
   }
+  ssl_key_and_certificate_refs = [avi_sslkeyandcertificate.tcp_router_server_cert.id]
   nsx_securitygroup = [nsxt_policy_group.tcp_router.display_name]
   pool_ref          = avi_pool.rabbit_17001.id
   lifecycle {
