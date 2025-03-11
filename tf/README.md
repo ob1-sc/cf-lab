@@ -59,22 +59,5 @@ Things to be worked on to extend the Terraform scripts:
 
 In order to destroy everything:
 
-1. Navigate to Avi Controller UI to `Infrastructure -> Cloud Resources -> Service Engine`
-1. select the cloud from the dropdown and delete all Service Engines associated with this cloud
 1. run `terraform destroy`
-
-## Known Issues
-
-### Destroy fails for avi_cloud because it is referred by a VCenterServer object
-
-The error is
-
-```txt
-Error: Encountered an error on DELETE request to URL https://172.20.16.2/api/cloud/cloud-cef9f650-03e9-43e5-810f-31798ebd639f: HTTP code: 400; error from Controller: map[error:Cannot delete, object is referred by: [VCenterServer vcenter]]
-```
-
-This might happen if the resource `avi_vcenterserver.vcenter` has been deleted already and removed from the tfstate file and if afterwards the `terraform destroy` fails BEFORE destroying the `avi_cloud.nsxt_cloud` resource. This happens especially if Service Engines are still running associated with that cloud, then cloud deletion is blocked by those referred Service Engines.
-
-The Workaround to get around this, after you have deleted the Service Engines from Avi Controller UI/API is to run `terraform apply` again, which brings back the `avi_vcenterserver.vcenter` resource, and immediately after that run `terraform destroy` (when Service Engines have not been created yet).
-
-To prevent this in general, delete all associated Service Engines before running `terraform destroy`.
+1. Follow the output! It will ask you to delete Service Engines associated with the Cloud. In order to do that, log in to Avi Controller UI, navigate to `Infrastructure -> Cloud Resources -> Service Engine`, then select the cloud from the dropdown and delete all Service Engines. After a few seconds, terraform will continue to destroy resources.

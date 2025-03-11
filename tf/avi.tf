@@ -158,6 +158,16 @@ resource "avi_cloud" "nsxt_cloud" {
   }
 }
 
+resource "local_file" "avi_config" {
+  filename = "${path.module}/avi_config.json"
+  content = jsonencode({
+    controller = var.avi_controller
+    username   = var.avi_username
+    password   = var.avi_password
+    cloud_name = var.avi_cloud_name
+  })
+}
+
 resource "avi_vcenterserver" "vcenter" {
   name       = "vcenter"
   content_lib {
@@ -166,6 +176,22 @@ resource "avi_vcenterserver" "vcenter" {
   vcenter_url             = var.data_plane_vcenter_host
   vcenter_credentials_ref = avi_cloudconnectoruser.vcenter_user.id
   cloud_ref               = avi_cloud.nsxt_cloud.id
+
+  lifecycle {
+    prevent_destroy = false
+  }
+
+  # required so that "terraform destroy" works.
+  # Executes a python script when running "terraform destroy" that waits for all Service Engines to be manually deleted that reference the cloud that will be deleted.
+  # Problem description: Service Engines get created automatically by the cloud once the first Virtual Service has been created. 
+  #                      Without this, Terraform will delete this avi_vcenterserver object but happily ignores the 403 error that the API will respond with because
+  #                      there are still resources (Service Engines) that reference this object. (There is a reason why the Terraform Provider ignores 403 errors)
+  provisioner "local-exec" {
+    when    = destroy
+    command = "python3 -u ${path.module}/wait-for-service-engine-deletion.py ${path.module}/avi_config.json"
+  }
+
+  depends_on = [ local_file.avi_config ]
 }
 
 resource "time_sleep" "wait_for_cloud_generated_objects" {
