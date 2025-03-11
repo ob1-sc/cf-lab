@@ -28,6 +28,7 @@ override.tf.json
 # Ignore variables files that may contain sensitive data
 *.tfvars
 *.tfvars.json
+.terraform.tfstate.lock.info
 
 *.crt 
 *.key 
