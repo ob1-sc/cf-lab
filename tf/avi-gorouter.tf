@@ -55,7 +55,29 @@ resource "avi_pool" "tas_web_pool" {
   }
 }
 
+resource "avi_pool" "tas_ssh_pool" {
+  name                  = "tas-ssh-pool01"
+  health_monitor_refs   = [avi_healthmonitor.cf_ssh_monitor.id]
+  cloud_ref             = avi_cloud.nsxt_cloud.id
+  vrf_ref               = avi_vrfcontext.avi_vip_vrf.id
+  nsx_securitygroup     = [nsxt_policy_group.diego_brain.path]
+  inline_health_monitor = false
+  default_server_port   = 2222
+
+  lifecycle {
+    # ignore servers as it gets auto-populated from NSX Groups
+    ignore_changes = [servers]
+  }
+}
+
+resource "time_sleep" "wait_gorouter_pool_creation" {
+  depends_on      = [avi_pool.tas_ssh_pool, avi_pool.tas_web_pool]
+  create_duration = "10s"
+}
+
+
 resource "avi_virtualservice" "tas" {
+  depends_on              = [time_sleep.wait_gorouter_pool_creation]
   name                    = "tas-web01"
   enabled                 = true
   vsvip_ref               = avi_vsvip.tas_web.id
@@ -75,22 +97,8 @@ resource "avi_virtualservice" "tas" {
   }
 }
 
-resource "avi_pool" "tas_ssh_pool" {
-  name                  = "tas-ssh-pool01"
-  health_monitor_refs   = [avi_healthmonitor.cf_ssh_monitor.id]
-  cloud_ref             = avi_cloud.nsxt_cloud.id
-  vrf_ref               = avi_vrfcontext.avi_vip_vrf.id
-  nsx_securitygroup     = [nsxt_policy_group.diego_brain.path]
-  inline_health_monitor = false
-  default_server_port   = 2222
-
-  lifecycle {
-    # ignore servers as it gets auto-populated from NSX Groups
-    ignore_changes = [servers]
-  }
-}
-
 resource "avi_virtualservice" "cf_ssh" {
+  depends_on              = [time_sleep.wait_gorouter_pool_creation]
   name                    = "tas-ssh01"
   enabled                 = true
   vsvip_ref               = avi_vsvip.tas_web.id

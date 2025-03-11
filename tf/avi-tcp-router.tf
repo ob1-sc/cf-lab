@@ -50,25 +50,6 @@ resource "avi_pool" "postgres_18000" {
   }
 }
 
-
-resource "avi_virtualservice" "postgres_18000" {
-  name                    = "postgres-18000"
-  enabled                 = true
-  vsvip_ref               = avi_vsvip.tas_tcp.id
-  cloud_type              = "CLOUD_NSXT"
-  cloud_ref               = avi_cloud.nsxt_cloud.id
-  vrf_context_ref         = avi_vrfcontext.avi_vip_vrf.id
-  application_profile_ref = data.avi_applicationprofile.system_l4_application.id
-  services {
-    port = 18000
-  }
-  nsx_securitygroup = [nsxt_policy_group.tcp_router.display_name]
-  pool_ref          = avi_pool.postgres_18000.id
-  lifecycle {
-    ignore_changes = [services, scaleout_ecmp]
-  }
-}
-
 resource "avi_pool" "postgres_18001" {
   name                  = "postgres_18001"
   health_monitor_refs   = [avi_healthmonitor.tcp_monitor.id]
@@ -84,24 +65,6 @@ resource "avi_pool" "postgres_18001" {
   }
 }
 
-resource "avi_virtualservice" "postgres_ssl" {
-  name                    = "tas-postgres-ssl"
-  enabled                 = true
-  vsvip_ref               = avi_vsvip.tas_tcp.id
-  cloud_type              = "CLOUD_NSXT"
-  cloud_ref               = avi_cloud.nsxt_cloud.id
-  vrf_context_ref         = avi_vrfcontext.avi_vip_vrf.id
-  application_profile_ref = data.avi_applicationprofile.system_l4_application.id
-  services {
-    port = 18001
-  }
-  nsx_securitygroup = [nsxt_policy_group.tcp_router.display_name]
-  pool_ref          = avi_pool.postgres_18001.id
-  lifecycle {
-    ignore_changes = [services, scaleout_ecmp]
-  }
-}
-
 resource "avi_pool" "rabbit_17000" {
   name                  = "rabbit-17000"
   health_monitor_refs   = [avi_healthmonitor.tcp_monitor.id]
@@ -114,24 +77,6 @@ resource "avi_pool" "rabbit_17000" {
   lifecycle {
     # ignore servers as it gets auto-populated from NSX Groups
     ignore_changes = [servers]
-  }
-}
-
-resource "avi_virtualservice" "rabbit_17000" {
-  name                    = "rabbit-17000"
-  enabled                 = true
-  vsvip_ref               = avi_vsvip.tas_tcp.id
-  cloud_type              = "CLOUD_NSXT"
-  cloud_ref               = avi_cloud.nsxt_cloud.id
-  vrf_context_ref         = avi_vrfcontext.avi_vip_vrf.id
-  application_profile_ref = data.avi_applicationprofile.system_l4_application.id
-  services {
-    port = 17000
-  }
-  nsx_securitygroup = [nsxt_policy_group.tcp_router.display_name]
-  pool_ref          = avi_pool.rabbit_17000.id
-  lifecycle {
-    ignore_changes = [services, scaleout_ecmp]
   }
 }
 
@@ -151,7 +96,71 @@ resource "avi_pool" "rabbit_17001" {
   }
 }
 
+resource "time_sleep" "wait_pool_creation" {
+  depends_on = [ avi_pool.postgres_18000, avi_pool.postgres_18001, avi_pool.rabbit_17000, avi_pool.rabbit_17001 ]
+  create_duration = "10s"
+}
+
+
+resource "avi_virtualservice" "postgres_18000" {
+  depends_on = [ time_sleep.wait_pool_creation ]
+  name                    = "postgres-18000"
+  enabled                 = true
+  vsvip_ref               = avi_vsvip.tas_tcp.id
+  cloud_type              = "CLOUD_NSXT"
+  cloud_ref               = avi_cloud.nsxt_cloud.id
+  vrf_context_ref         = avi_vrfcontext.avi_vip_vrf.id
+  application_profile_ref = data.avi_applicationprofile.system_l4_application.id
+  services {
+    port = 18000
+  }
+  nsx_securitygroup = [nsxt_policy_group.tcp_router.display_name]
+  pool_ref          = avi_pool.postgres_18000.id
+  lifecycle {
+    ignore_changes = [services, scaleout_ecmp]
+  }
+}
+
+resource "avi_virtualservice" "postgres_ssl" {
+  depends_on = [ time_sleep.wait_pool_creation ]
+  name                    = "tas-postgres-ssl"
+  enabled                 = true
+  vsvip_ref               = avi_vsvip.tas_tcp.id
+  cloud_type              = "CLOUD_NSXT"
+  cloud_ref               = avi_cloud.nsxt_cloud.id
+  vrf_context_ref         = avi_vrfcontext.avi_vip_vrf.id
+  application_profile_ref = data.avi_applicationprofile.system_l4_application.id
+  services {
+    port = 18001
+  }
+  nsx_securitygroup = [nsxt_policy_group.tcp_router.display_name]
+  pool_ref          = avi_pool.postgres_18001.id
+  lifecycle {
+    ignore_changes = [services, scaleout_ecmp]
+  }
+}
+
+resource "avi_virtualservice" "rabbit_17000" {
+  depends_on = [ time_sleep.wait_pool_creation ]
+  name                    = "rabbit-17000"
+  enabled                 = true
+  vsvip_ref               = avi_vsvip.tas_tcp.id
+  cloud_type              = "CLOUD_NSXT"
+  cloud_ref               = avi_cloud.nsxt_cloud.id
+  vrf_context_ref         = avi_vrfcontext.avi_vip_vrf.id
+  application_profile_ref = data.avi_applicationprofile.system_l4_application.id
+  services {
+    port = 17000
+  }
+  nsx_securitygroup = [nsxt_policy_group.tcp_router.display_name]
+  pool_ref          = avi_pool.rabbit_17000.id
+  lifecycle {
+    ignore_changes = [services, scaleout_ecmp]
+  }
+}
+
 resource "avi_virtualservice" "rabbit_17001" {
+  depends_on = [ time_sleep.wait_pool_creation ]
   name                    = "rabbit-17001"
   enabled                 = true
   vsvip_ref               = avi_vsvip.tas_tcp.id

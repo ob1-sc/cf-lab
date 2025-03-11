@@ -47,10 +47,9 @@ resource "avi_systemconfiguration" "controller" {
     smtp_type = "SMTP_NONE"
   }
 
-  portal_configuration {
-    # TODO: improve that to not allow basic auth => more secure
-    allow_basic_authentication = true
-  }
+  # portal_configuration {
+  #   allow_basic_authentication = true
+  # }
 
   lifecycle {
     ignore_changes = [ssh_ciphers, ssh_hmacs, uuid]
@@ -127,6 +126,7 @@ resource "avi_cloud" "nsxt_cloud" {
   vtype            = "CLOUD_NSXT"
   # maintenance_mode = "false"
   obj_name_prefix  = var.avi_cloud_obj_name_prefix
+  dhcp_enabled = true
 
   nsxt_configuration {
     nsxt_url             = var.nsxt_host
@@ -159,7 +159,6 @@ resource "avi_cloud" "nsxt_cloud" {
 }
 
 resource "avi_vcenterserver" "vcenter" {
-  depends_on = [avi_cloud.nsxt_cloud, avi_cloudconnectoruser.vcenter_user]
   name       = "vcenter"
   content_lib {
     id = vsphere_content_library.library.id
@@ -169,7 +168,13 @@ resource "avi_vcenterserver" "vcenter" {
   cloud_ref               = avi_cloud.nsxt_cloud.id
 }
 
+resource "time_sleep" "wait_for_cloud_generated_objects" {
+  depends_on = [avi_cloud.nsxt_cloud]
+  create_duration = "30s"
+}
+
 resource "avi_vrfcontext" "avi_mgmt_vrf" {
+  depends_on = [ time_sleep.wait_for_cloud_generated_objects ]
   count     = var.avi_mgmt_network_dhcp_enabled ? 0 : 1
   name      = nsxt_policy_tier1_gateway.t1_router_avi_mgmt.display_name
   cloud_ref = avi_cloud.nsxt_cloud.id
@@ -194,6 +199,7 @@ resource "avi_vrfcontext" "avi_mgmt_vrf" {
 }
 
 resource "avi_vrfcontext" "avi_vip_vrf" {
+  depends_on = [ time_sleep.wait_for_cloud_generated_objects ]
   name      = nsxt_policy_tier1_gateway.t1_router_avi_vip.display_name
   cloud_ref = avi_cloud.nsxt_cloud.id
   static_routes {
@@ -217,8 +223,10 @@ resource "avi_vrfcontext" "avi_vip_vrf" {
 }
 
 resource "avi_network" "avi_mgmt_segment" {
+  depends_on = [ time_sleep.wait_for_cloud_generated_objects ]
+  count     = var.avi_mgmt_network_dhcp_enabled ? 0 : 1
   name            = var.avi_mgmt_segment_name
-  vrf_context_ref = var.avi_mgmt_network_dhcp_enabled ? null : avi_vrfcontext.avi_mgmt_vrf[0].id
+  vrf_context_ref = avi_vrfcontext.avi_mgmt_vrf[0].id
   cloud_ref       = avi_cloud.nsxt_cloud.id
   dhcp_enabled    = var.avi_mgmt_network_dhcp_enabled
   configured_subnets {
@@ -229,23 +237,21 @@ resource "avi_network" "avi_mgmt_segment" {
       }
       mask = var.avi_mgmt_network_ip_addr_mask
     }
-    dynamic "static_ip_ranges" {
-      for_each = var.avi_mgmt_network_dhcp_enabled ? [] : [1]
-      content {
-        range {
-          begin {
-            addr = var.avi_mgmt_segment_static_ip_begin
-            type = "V4"
-          }
-          end {
-            addr = var.avi_mgmt_segment_static_ip_end
-            type = "V4"
-          }
+    static_ip_ranges {
+      range {
+        begin {
+          addr = var.avi_mgmt_segment_static_ip_begin
+          type = "V4"
         }
-        type = "STATIC_IPS_FOR_VIP_AND_SE"
+        end {
+          addr = var.avi_mgmt_segment_static_ip_end
+          type = "V4"
+        }
       }
+      type = "STATIC_IPS_FOR_VIP_AND_SE"
     }
   }
+
   # The below attribute prevents Avi NSX-T Cloud from recreating a new network
   attrs {
     key   = "segmentid"
@@ -260,13 +266,13 @@ resource "avi_network" "avi_mgmt_segment" {
     value = "static"
   }
   lifecycle {
-    # always wants to change from true to false on every terraform plan.
-    # I assume this is changed at runtime by the NSX Cloud
-    ignore_changes = [synced_from_se]
+    # this is changed at runtime by the NSX Cloud and required to not end up with duplicate networks
+    ignore_changes = [attrs, synced_from_se]
   }
 }
 
 resource "avi_network" "avi_vip_segment" {
+  depends_on = [ time_sleep.wait_for_cloud_generated_objects ]
   name            = var.avi_vip_segment_name
   vrf_context_ref = avi_vrfcontext.avi_vip_vrf.id
   cloud_ref       = avi_cloud.nsxt_cloud.id
@@ -307,9 +313,8 @@ resource "avi_network" "avi_vip_segment" {
     value = "static"
   }
   lifecycle {
-    # always wants to change from true to false on every terraform plan.
-    # I assume this is changed at runtime by the NSX Cloud
-    ignore_changes = [synced_from_se]
+    # this is changed at runtime by the NSX Cloud and required to not end up with duplicate networks
+    ignore_changes = [attrs, synced_from_se]
   }
 }
 
