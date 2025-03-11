@@ -61,3 +61,24 @@ In order to destroy everything:
 
 1. run `terraform destroy`
 1. Follow the output! It will ask you to delete Service Engines associated with the Cloud. In order to do that, log in to Avi Controller UI, navigate to `Infrastructure -> Cloud Resources -> Service Engine`, then select the cloud from the dropdown and delete all Service Engines. After a few seconds, terraform will continue to destroy resources.
+
+## Known Issues
+
+Things that need to be improved:
+
+1. adding a backup passphrase works with Avi 31.1.1 but not with 22.1.7
+1. when running `terraform apply` the first time sometimes results in the error:
+
+    ```shell
+    avi_virtualservice.rabbit_17001: Creation complete after 1s [id=https://172.20.16.3/api/virtualservice/virtualservice-c3abe7e1-ae58-481e-bd32-9eaaaff1302c]
+    ╷
+    │ Error: Encountered an error on POST request to URL https://172.20.16.3/api/virtualservice: HTTP code: 500; error from Controller: map[error:record not found]
+    │
+    │   with avi_virtualservice.tas,
+    │   on avi-gorouter.tf line 79, in resource "avi_virtualservice" "tas":
+    │   79: resource "avi_virtualservice" "tas" {
+    │
+    ╵
+    ```
+
+  I don't know why this happens, but you can solve it by simply re-running `terraform apply`.
