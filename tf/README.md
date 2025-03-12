@@ -66,7 +66,18 @@ In order to destroy everything:
 
 Things that need to be improved:
 
-1. adding a backup passphrase works with Avi 31.1.1 but not with 22.1.7
+1. Requires version 22.1.5 of the Avi Provider which is still able to update existing non-Terraform-managed objects. With version >=22.1.6 you will get errors like this:
+
+    ```shell
+    │ Error: Encountered an error on POST request to URL https://172.20.16.3/api/vrfcontext: HTTP code: 409; error from Controller: map[error:Vrf context with this Name, Tenant ref and Cloud ref already exists.]
+    │ 
+    │   with avi_vrfcontext.avi_vip_vrf,
+    │   on avi.tf line 227, in resource "avi_vrfcontext" "avi_vip_vrf":
+    │  227: resource "avi_vrfcontext" "avi_vip_vrf" {
+    ```
+
+    Note: You can still use version 22.1.5 to automate Avi Controller 31.1.1.
+
 1. when running `terraform apply` the first time sometimes results in the error:
 
     ```shell
