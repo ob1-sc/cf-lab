@@ -60,7 +60,7 @@ In order to destroy everything:
 
 Things that need to be improved:
 
-1. Requires version 22.1.5 of the Avi Provider which is still able to update existing non-Terraform-managed objects. With version >=22.1.6 you will get errors like this:
+1. Requires version 22.1.5 of the Terraform Avi Provider which is still able to update existing non-Terraform-managed objects. With version >=22.1.6 you will get errors like this:
 
     ```shell
     │ Error: Encountered an error on POST request to URL https://172.20.16.3/api/vrfcontext: HTTP code: 409; error from Controller: map[error:Vrf context with this Name, Tenant ref and Cloud ref already exists.]
