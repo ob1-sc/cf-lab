@@ -16,12 +16,6 @@ This Terraform script
 - an empty Content Library to store the Avi Controller OVA
 - NSX Tier-0, Edge Cluster and a Transport Zone preconfigured
 
-## Open Topics
-
-Things to be worked on to extend the Terraform scripts:
-
-- use a Terraform [remote Backend](https://developer.hashicorp.com/terraform/language/backend)
-
 ## Usage
 
 ### Deployment
