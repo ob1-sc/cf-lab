@@ -11,6 +11,9 @@ This Terraform script
 - imports TAS Gorouter SSL Certificates and Opsman Root CA to Avi
 - creates a Virtual Server with a static VIP and a Pool consisting for the Gorouters and for `cf ssh`
 
+> **ℹ️ Info:**  
+> This Terraform script works fine provisiong Avi Load Balancer using the [Avi Terraform provider](https://registry.terraform.io/providers/vmware/avi/latest/docs) but it's worth to mention that the [Avi Ansible Module](https://github.com/vmware/ansible-collection-alb) is more mature. This Terraform scripts contains some iffy workarounds to get around some issues with the way how Avi works in conjunction with the way Terraform usually works.
+
 ## Prerequisites
 
 - an empty Content Library to store the Avi Controller OVA
