@@ -1,0 +1,27 @@
+---
+avi_controller_vcenter_hostname: "192.168.178.102"
+avi_controller_vcenter_username: "administrator@vsphere.local"
+avi_controller_vcenter_password: "VMware1!"
+avi_controller_vcenter_validate_certs: false
+avi_controller_vm_name: "avi-controller-ansible"
+avi_controller_network_name: "tanzu-without-dhcp"
+avi_controller_datastore: "datastore1"
+avi_controller_datacenter: "Home"
+avi_controller_cluster: "Physical"
+avi_controller_folder: ""
+avi_controller_ova_path: "/Users/ak016518/workspace/vmware-products/controller-31.1.1-9122.ova"
+avi_controller_api_version: 31.1.1
+avi_controller_cpu: 8
+avi_controller_memory: 32768
+avi_controller_disk_size: 128
+avi_controller_content_library: "avi-controller"
+avi_controller_content_library_item: "avi-controller-31.1.1"
+avi_controller_ip: "172.20.16.3"
+avi_controller_netmask: "255.255.255.0"
+avi_controller_gateway: "172.20.16.1"
+avi_controller_ssh_public_key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDNre3RSDIQIbswU/AbFMrdGDTRNIxXs1L1aY9ozDm/TsTKBf85Kr/0Bi3Az1DgOifR3s7SblZFhqKtGueqyv4NKoNy8dgxUsFzGKaRBmwGfCn9rp0hAV/r6BdyhRGloltaZ4KuR3v3AQTTjpyWPsf55wUIMYtOtrQ1tnNspmZmEyh11e8Hbwsq6jaVDCpSWkLPgir4lDTFANRpA/MaU9XUG3PjYszaNFgIScUwQVl0otmCpFgZgf9jXwy4K5CpG4u/1CSIA6H+5XAJaAzDNGcAIGQKaIAj6Cvd8QyUs+UEV5n6rJSsp+gnfu0gEYx4QmeWwcVdGu1Re18qHVgAP56gF58uV7p/V60Tlf9IFqkz67lwLlOuq9dfNmPGIJ/lydcLgcvXmJObyntm1jFi5ChtIrBd7uShh9b6wwOLhekv3TwOn0nHPjXDabVDcmfXVhAgyJyknCFv1Hm3UFwTngoc4WFm38wgxzajOzxt83b8bXXhMNaU8L8VXtVpfIrDHbAKhho6Aaf8JahKa46UxFa4yjkVfN75N4++8CdCpGiruLUp1rW4zYkrjxBuIBcib/06QTsvdPIsYVsPic/mYoxBVTclvLi/ELVdwFFSavwNKI+XwH6ENI7vckkVs6HpM0GJu4qsvmhrlkGVmNM0BkaJN1i1CQgn01OTz+um1rjr+Q== andy.knapp.ak@gmail.com"
+
+# Avi Admin Zugangsdaten
+avi_tenant: "admin"
+avi_username: "admin"
+avi_password: "VMware1!VMware1!"

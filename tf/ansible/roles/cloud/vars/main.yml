@@ -1,0 +1,1 @@
+avi_license_key: "{{ lookup('env', 'AVI_LICENSE_KEY') }}"

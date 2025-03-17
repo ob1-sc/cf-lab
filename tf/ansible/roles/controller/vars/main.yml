@@ -1,0 +1,7 @@
+avi_credentials:
+  controller: "{{ avi_controller_ip }}"
+  username: "{{ avi_controller_username }}"
+  password: "{{ avi_controller_password }}"
+  api_version: "{{ avi_controller_api_version }}"
+
+avi_default_password: "{{ lookup('env', 'AVI_DEFAULT_PASSWORD') }}"

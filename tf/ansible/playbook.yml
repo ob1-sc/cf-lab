@@ -1,0 +1,11 @@
+---
+- name: Deploy Avi Controller for TAS 
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - vmware.alb
+    - vmware.ansible_for_nsxt
+
+  roles:
+    - role: controller
+      tags: ["avi","controller"]

@@ -1,0 +1,188 @@
+---
+
+- name: Deploy Avi Controller
+  community.vmware.vmware_deploy_ovf:
+    hostname: "{{ avi_controller_vcenter_hostname }}"
+    username: "{{ avi_controller_vcenter_username }}"
+    password: "{{ avi_controller_vcenter_password }}"
+    validate_certs: false
+    name: "{{ avi_controller_vm_name }}"
+    datacenter: "{{ avi_controller_datacenter }}"
+    # folder: /SG1/vm
+    cluster: "{{ avi_controller_cluster }}"
+    datastore: "{{ avi_controller_datastore }}"
+    disk_provisioning: "thin"
+    networks:
+      "Management": "{{ avi_controller_network_name }}"
+    ova: "{{ avi_controller_ova_path }}"
+    allow_duplicates: false
+    power_on: true
+    fail_on_spec_warnings: false
+    wait: true
+    wait_for_ip_address: true
+    inject_ovf_env: true
+    properties:
+      avi.mgmt-ip.CONTROLLER: "{{ avi_controller_ip }}"
+      avi.mgmt-mask.CONTROLLER: "{{ avi_controller_netmask }} "
+      avi.default-gw.CONTROLLER: "{{ avi_controller_gateway }}"
+      avi.sysadmin-public-key.CONTROLLER: "{{ avi_controller_ssh_public_key }}"
+  register: avi_controller_results
+
+- name: Wait for Controller be ready
+  ansible.builtin.uri:
+    validate_certs: false
+    url: "http://{{ avi_controller_ip }}/"
+    method: GET
+    status_code: 200,302,301,503
+  register: result_avi_controller_check
+  until: result_avi_controller_check.status == 200
+  retries: 480
+  delay: 15
+
+- name: Check Cluster Status
+  ansible.builtin.uri:
+    validate_certs: false
+    url: "https://{{ avi_controller_ip }}/api/cluster/runtime"
+    method: GET
+    status_code: 200,302,301,503
+  register: cluster_status
+  until: cluster_status.json.cluster_state.progress == 100
+  retries: 480
+  delay: 15
+
+- name: Wait to all services be ready
+  ansible.builtin.pause:
+    echo: false
+    seconds: 60
+  when: avi_controller_results.changed
+
+- name: Check to see if password needs to be reset
+  vmware.alb.avi_api_session:
+    avi_credentials: "{{ avi_credentials }}"
+    http_method: get
+    path: cluster
+  register: access_test
+  ignore_errors: true
+
+- ansible.builtin.fail:
+    msg:
+      - "The controller default password is empty"
+      - "If you are using environmental variables, check it is exported"
+  when: >
+    avi_default_password == "" and
+    "access_test.module_stderr is defined and
+    'Invalid credentials' in access_test.module_stderr"
+
+- name: Change admin default password
+  vmware.alb.avi_useraccount:
+    controller: "{{ avi_controller_ip }}"
+    username: "{{ avi_username }}"
+    password: "{{ avi_password }}"
+    api_version: "{{ avi_controller_api_version }}"
+    old_password: "{{ avi_default_password }}"
+  when: >
+    "access_test.module_stderr is defined and
+    'Invalid credentials' in access_test.module_stderr"
+  register: useraccount
+
+- name: Wait to for pw change
+  ansible.builtin.pause:
+    echo: false
+    seconds: 5
+  when: useraccount.changed
+
+- name: Create a SSL Key and Certificate
+  vmware.alb.avi_sslkeyandcertificate:
+    avi_credentials: "{{ avi_credentials }}"
+    type: SSL_CERTIFICATE_TYPE_SYSTEM
+    name: "controller-cert"
+    certificate:
+      self_signed: true
+      days_until_expire: 730
+      signature_algorithm: sha256WithRSAEncryption
+      subject:
+        common_name: "{{ avi_controller_ip }}"
+      subject_alt_names:
+        - "{{ avi_controller_ip }}"
+  register: avi_controller_cert_result
+
+- name: SettingbBasic Controller config
+  vmware.alb.avi_systemconfiguration:
+    avi_credentials: "{{ avi_password }}"
+    welcome_workflow_complete: true
+    default_license_tier: ESSENTIALS
+    email_configuration:
+      smtp_type: SMTP_NONE
+    global_tenant_config:
+      se_in_provider_context: true
+      tenant_access_to_provider_se: true
+      tenant_vrf: false
+    dns_configuration:
+      server_list:
+        - type: V4
+          addr: "{{ dns_server }}"
+    ntp_configuration:
+      ntp_servers:
+        - server:
+            type: DNS
+            addr: "{{ ntp_server }}"
+    portal_configuration:
+      sslkeyandcertificate_refs:
+        - /api/sslkeyandcertificate/?name=controller-cert
+  register: system_config_result
+
+- name: Wait for server to restart with new certificate
+  ansible.builtin.pause:
+    echo: false
+    seconds: 15
+  when: system_config_result.changed
+
+- name: Create BackupConfiguration object
+  vmware.alb.avi_backupconfiguration:
+    avi_credentials: "{{ avi_credentials }}"
+    name: Backup-Configuration
+    backup_passphrase: VMware1!
+    upload_to_remote_host: false
+    tenant_ref: "/api/tenant/?name=admin"
+    save_local: true
+  register: backup
+
+# resource "null_resource" "add_license" {
+#   depends_on = [avi_systemconfiguration.controller]
+
+#   # Use timestamp to force re-execution
+#   triggers = {
+#     always_run = timestamp()
+#   }
+
+#   provisioner "local-exec" {
+#     command = "curl -X PUT -H \"Authorization: Basic ${base64encode("${var.avi_username}:${var.avi_password}")}\" -H \"Content-Type: application/json\" -d '{\"serial_key\":\"${var.avi_license_key}\"}' -k https://${var.avi_controller}/api/license"
+#   }
+# }
+
+# curl -k -i -c ./cookie-jar -H "X-Avi-Version: ${avi_version}" -H "X-Avi-Tenant: $avi_tenant" -H "Content-Type: application/json" -d '{"username": "'${avi_username}'", "password": "'${avi_password}'"}' -POST https://${avi_controller_ip}/login
+
+# avi_csrf_token=$(sed -nr "s/.*csrftoken[[:space:]]+(.*)$/\1/p" ./cookie-jar)
+
+# curl -k \
+#   -X PUT \
+#   -i \
+#   -b ./cookie-jar \
+#   -H "X-CSRFToken: ${avi_csrf_token}" \
+#   -H "Referer: https://${avi_controller_ip}/" \
+#   -H "Content-Type: application/json" \
+#   -d '{"name":"Backup-Configuration","backup_passphrase":"'${backup_passphrase}'","save_local":"true"}' \
+#   https://${avi_controller_ip}/api/backupconfiguration/${backup_configuration_uuid}
+
+# - name: Add Avi license
+#   ansible.builtin.uri:
+#     validate_certs: false
+#     url: "http://{{ avi_controller_ip }}/api/license"
+#     method: PUT
+#     status_code: 200,302,301,503
+#     headers:
+#       Content-Type: application/json
+#     body_format: json
+#     body:
+#       serial_key: "{{ avi_license_key }}"
+
