@@ -7,46 +7,16 @@ edge_cluster_name   = "edge-cluster-1"
 t0_router_name      = "tas-tkgi-t0"
 transport_zone_name = "tz-overlay"
 
-avi_version                      = "31.1.1"
-avi_controller_vcenter_host      = "192.168.178.102"
-avi_controller_vcenter_username  = "administrator@vsphere.local"
-avi_controller_vcenter_password  = ""
-avi_license_key                  = "xxxx-yyyyy-zzzzz-wwwww-vvvvv"
-avi_username                     = "admin"
-avi_password                     = ""
-avi_controller                   = "172.20.16.3"
-avi_tenant                       = "admin"
-avi_cloud_name                   = "nsx-cloud"
 avi_mgmt_segment_name            = "avi-mgmt-seg-automated"
-avi_mgmt_network_dhcp_enabled    = true
 avi_mgmt_segment_gateway         = "172.30.7.113"
 avi_mgmt_network_ip_addr         = "172.30.7.112"
 avi_mgmt_network_ip_addr_mask    = 28
+avi_mgmt_network_dhcp_enabled    = true
 avi_mgmt_dhcp_server_address     = "172.30.7.126"
 avi_mgmt_segment_static_ip_begin = "172.30.7.114"
 avi_mgmt_segment_static_ip_end   = "172.30.7.125"
+
 avi_vip_segment_name             = "avi-vip-seg-automated"
 avi_vip_segment_gateway          = "172.30.7.129"
 avi_vip_segment_ip_addr          = "172.30.7.128"
 avi_vip_segment_ip_addr_mask     = 28
-avi_vip_segment_static_ip_begin  = "172.30.7.131"
-avi_vip_segment_static_ip_end    = "172.30.7.140"
-tas_gorouter_vip                 = "172.30.7.130"
-tas_web_monitor                  = "tas-web-monitor-automated"
-tas_ssh_monitor                  = "tas-ssh-monitor-automated"
-opsman_ca_cert                   = <<CERT
------BEGIN CERTIFICATE-----
-MIIDUDCCAjigAwIBAgIUO4pKTaaviTog/VDBg25zgXup2CowDQYJKoZIhvcNAQEL
-BQAwHzELMAkGA1UEBhMCVVMxEDAOBgNVBAoMB1Bpdm90YWwwHhcNMjUwMTE0MTIw
-....
-LPG5eTD+yMk+TzIaTaajoVIwEHlfy7LJR/Dm88qShbwxEjT4
------END CERTIFICATE-----
-CERT
-
-data_plane_vcenter_datacenter          = "Lab"
-data_plane_vcenter_cluster             = "compute"
-data_plane_vcenter_datastore           = "datastore-esx1"
-data_plane_vcenter_host                = "172.20.16.10"
-data_plane_vcenter_username            = "administrator@vsphere.local"
-data_plane_vcenter_password            = ""
-data_plane_vcenter_content_library_avi = "avi-content-library"

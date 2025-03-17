@@ -59,8 +59,6 @@ resource "nsxt_policy_segment" "avi_mgmt_segment" {
   }
 }
 
-
-
 resource "nsxt_policy_segment" "avi_vip_segment" {
   display_name        = var.avi_vip_segment_name
   description         = "Terraform provisioned NSX-T Segment for Avi VIP"
@@ -130,4 +128,3 @@ resource "nsxt_policy_group" "tcp_router" {
     ignore_changes = [conjunction]
   }
 }
-

@@ -1,67 +1,3 @@
-##############################
-# Avi general variables      #
-##############################
-
-variable "avi_version" {
-  type = string
-}
-
-variable "avi_license_key" {
-  type      = string
-  sensitive = true
-}
-
-variable "avi_controller" {
-  description = "Avi Controller IP or Hostname"
-  type        = string
-}
-
-variable "avi_username" {
-  type = string
-}
-
-variable "avi_password" {
-  type      = string
-  sensitive = true
-}
-
-variable "avi_tenant" {
-  type    = string
-  default = "admin"
-}
-
-variable "avi_cloud_name" {
-  description = "Name of the Avi Cloud"
-  type        = string
-}
-
-variable "avi_cloud_obj_name_prefix" {
-  type    = string
-  default = "nsx-avi-automated"
-}
-
-variable "tas_web_monitor" {
-  type = string
-}
-
-variable "tas_tcp_monitor" {
-  type = string
-}
-
-variable "tas_ssh_monitor" {
-  type = string
-}
-
-variable "avi_nsx_usercredentials_name" {
-  type    = string
-  default = "nsxt-integration-user"
-}
-
-variable "avi_vcenter_usercredentials_name" {
-  type    = string
-  default = "vcenter-integration-user"
-}
-
 ###############################
 # Avi Management Network     #
 ###############################
@@ -82,6 +18,7 @@ variable "avi_mgmt_dhcp_server_address" {
   type        = string
   default     = ""
 }
+
 variable "avi_mgmt_network_ip_addr" {
   description = "Avi Management Network IP Address"
   type        = string
@@ -107,7 +44,6 @@ variable "avi_mgmt_segment_static_ip_end" {
   type        = string
 }
 
-
 #################################
 # Avi VIP Network Configuration #
 #################################
@@ -129,16 +65,6 @@ variable "avi_vip_segment_ip_addr_mask" {
 
 variable "avi_vip_segment_gateway" {
   description = "Gateway for VIP Segment"
-  type        = string
-}
-
-variable "avi_vip_segment_static_ip_begin" {
-  description = "Start of Static IP Range for VIP Segment"
-  type        = string
-}
-
-variable "avi_vip_segment_static_ip_end" {
-  description = "End of Static IP Range for VIP Segment"
   type        = string
 }
 
@@ -182,80 +108,5 @@ variable "edge_cluster_name" {
 
 variable "transport_zone_name" {
   description = "Transport Zone Name"
-  type        = string
-}
-
-###########################
-# vSphere Variables #
-###########################
-
-variable "avi_controller_vcenter_host" {
-  description = "vCenter Host for Avi Integration"
-  type        = string
-}
-
-variable "avi_controller_vcenter_username" {
-  description = "vCenter Username for Avi Integration"
-  type        = string
-}
-
-variable "avi_controller_vcenter_password" {
-  description = "vCenter Password for Avi Integration"
-  type        = string
-  sensitive   = true
-}
-
-variable "data_plane_vcenter_datacenter" {
-  description = "vCenter Datacenter for Avi Integration"
-  type        = string
-}
-
-variable "data_plane_vcenter_cluster" {
-  description = "vCenter Cluster for Avi Integration"
-  type        = string
-}
-
-variable "data_plane_vcenter_datastore" {
-  description = "vCenter Datastore for Avi Integration"
-  type        = string
-}
-
-variable "data_plane_vcenter_host" {
-  description = "vCenter Host for Avi Integration"
-  type        = string
-}
-
-variable "data_plane_vcenter_username" {
-  description = "vCenter Username for Avi Integration"
-  type        = string
-}
-
-variable "data_plane_vcenter_password" {
-  description = "vCenter Password for Avi Integration"
-  type        = string
-  sensitive   = true
-}
-
-variable "data_plane_vcenter_content_library_avi" {
-  description = "name of Content Library to be created for Avi"
-  type        = string
-}
-
-###########################
-# Miscellaneous Variables #
-###########################
-
-variable "opsman_ca_cert" {
-  description = "Ops Manager CA Certificate"
-  type        = string
-}
-
-variable "tas_gorouter_vip" {
-  description = "TAS GoRouter VIP Address"
-  type        = string
-}
-
-variable "tas_tcp_vip" {
-  description = "TAS TCP Router VIP Address"
   type        = string
 }

@@ -1,4 +1,5 @@
 .envrc
+.ignore
 
 # Terraform state files
 *.tfstate
