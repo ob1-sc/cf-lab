@@ -1,0 +1,113 @@
+- name: Create NSXT user 
+  vmware.alb.avi_cloudconnectoruser:
+    api_version: "31.1.1"
+    avi_credentials: "{{ avi_credentials }}"
+    name: "nsxt-integration-user"
+    tenant_ref: /api/tenant/?name=admin
+    nsxt_credentials:
+      username: "{{ nsxt_username }}"
+      password: "{{ nsxt_password }}"
+  register: nsxt_credentials
+
+- name: Configure vCenter Credentials
+  vmware.alb.avi_cloudconnectoruser:
+    avi_credentials: "{{ avi_credentials }}"
+    name: "vcenter-integration-user"
+    vcenter_credentials:
+      username: "{{ cloud_vcenter_username }}"
+      password: "{{ cloud_vcenter_password }}"
+  register: vcenter_creds
+
+- name: Create a NSX cloud
+  vmware.alb.avi_cloud:
+    avi_credentials: "{{ avi_credentials }}"
+    obj_name_prefix: "ansible"
+    dhcp_enabled: true
+    enable_vip_static_routes: true
+    name: "{{ avi_cloud_name }}"
+    prefer_static_routes: false
+    nsxt_configuration:
+      nsxt_url: "{{ nsxt_url }}"
+      nsxt_credentials_ref: "{{ nsxt_credentials.obj.url }}"
+      management_network_config:
+        tz_type: "OVERLAY"
+        transport_zone: "{{ management_network_transport_zone }}"
+        overlay_segment:
+          segment_id: "{{ management_network_segment_id }}"
+          tier1_lr_id: "{{ management_network_tier1_lr_id }}"
+      data_network_config:
+        transport_zone: "{{ vip_network_transport_zone }}"
+        tz_type: "OVERLAY"
+        tier1_segment_config:
+          segment_config_mode: "TIER1_SEGMENT_MANUAL"
+          manual:
+            tier1_lrs:
+              segment_id: "{{ vip_network_segment_id }}"
+              tier1_lr_id: "{{ vip_network_tier1_lr_id }}"
+    vtype: CLOUD_NSXT
+  register: cloud_config
+
+- name: "Configure vCenter for NSX-T Cloud"
+  vmware.alb.avi_vcenterserver:
+    avi_credentials: "{{ avi_credentials }}"
+    name: "vcenter"
+    cloud_ref: "/api/cloud/?name={{ avi_cloud_name }}"
+    vcenter_credentials_ref: "{{ vcenter_creds.obj.url }}"
+    content_lib:
+      id: "{{ se_content_library_id }}"
+    vcenter_url: "{{ cloud_vcenter_url }}"
+
+# - name: Set Management Network Default Gateway
+#   vmware.alb.avi_vrfcontext:
+#     avi_credentials: "{{ avi_credentials }}"
+#     cloud_ref: "/api/cloud?name={{ cloud_name }}"
+#     name: "management"
+#     static_routes:
+#       - route_id: "1"
+#         prefix:
+#           mask: 0
+#           ip_addr:
+#             type: "V4"
+#             addr: "0.0.0.0"
+#         next_hop:
+#           type: "V4"
+#           addr: "{{ se_management_network_gateway }}"
+
+# - name: Wait for cloud to configure
+#   ansible.builtin.pause:
+#     echo: false
+#     seconds: 30
+#   when: cloud_config.changed
+
+# - name: Check to ensure that cloud is in a sync'd state
+#   vmware.alb.avi_api_session:
+#     avi_credentials: "{{ avi_credentials }}"
+#     http_method: get
+#     path: cloudruntime
+#     params:
+#       name: "{{ cloud_name }}"
+#   register: cloud_status
+
+# - name: Abort on sync error
+#   ansible.builtin.fail:
+#     msg:
+#       - "The cloud is still not synchronised"
+#       - "Check the status of the cloud in the console using https://{{ controller_ip }}"
+#   when: not cloud_status.obj.results[0].network_sync_complete
+
+# - name: Set VIP Network Default Gateway
+#   vmware.alb.avi_vrfcontext:
+#     avi_credentials: "{{ avi_credentials }}"
+#     cloud_ref: "/api/cloud?name={{ cloud_name }}"
+#     name: "global"
+#     static_routes:
+#       - route_id: "1"
+#         prefix:
+#           mask: 0
+#           ip_addr:
+#             type: "V4"
+#             addr: "0.0.0.0"
+#         next_hop:
+#           type: "V4"
+#           addr: "{{ se_vip_network_gateway }}"
+#     system_default: true

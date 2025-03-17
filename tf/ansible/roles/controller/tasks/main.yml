@@ -155,7 +155,7 @@
     validate_certs: false
     url: "http://{{ avi_controller_ip }}/api/license"
     method: PUT
-    status_code: 200,302,301,503
+    status_code: 200,302,301
     headers:
       Content-Type: application/json
       X-CSRFToken: "{{ csrftoken }}"

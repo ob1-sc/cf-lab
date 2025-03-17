@@ -17,8 +17,6 @@ avi_controller_api_version: 31.1.1
 avi_controller_cpu: 8
 avi_controller_memory: 32768
 avi_controller_disk_size: 128
-avi_controller_content_library: "avi-controller"
-avi_controller_content_library_item: "avi-controller-31.1.1"
 avi_controller_ip: "172.20.16.3"
 avi_controller_netmask: "255.255.255.0"
 avi_controller_gateway: "172.20.16.1"
@@ -28,3 +26,20 @@ avi_controller_ssh_public_key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDNre3RSDIQ
 avi_tenant: "admin"
 avi_username: "admin"
 avi_password: "VMware1!VMware1!"
+
+avi_cloud_name: "nsx-cloud-ansible"
+cloud_vcenter_url: "172.20.16.10"
+se_management_port_group: "avi-mgmt-seg-automated"
+se_content_library_id: "8cd90ae3-ec94-4660-a8ef-0c004a049720"
+cloud_vcenter_username: "administrator@vsphere.local"
+cloud_vcenter_password: "VMware1!"
+
+nsxt_url: "172.20.16.11"
+nsxt_username: admin 
+nsxt_password: "VMware1!VMware1!VMware1!"
+management_network_transport_zone: "/infra/sites/default/enforcement-points/default/transport-zones/9ea9996c-ea48-427f-a77d-600e5f4b4d43"
+management_network_tier1_lr_id: "/infra/tier-1s/t1-avi-mgmt"
+management_network_segment_id: "/infra/segments/e92cb16f-4d88-48ff-ad10-d84df0c5bc07"
+vip_network_transport_zone: "/infra/sites/default/enforcement-points/default/transport-zones/9ea9996c-ea48-427f-a77d-600e5f4b4d43"
+vip_network_tier1_lr_id: "/infra/tier-1s/t1-avi-vip"
+vip_network_segment_id: "/infra/segments/38c7b30b-f081-4cee-a755-3d459bbfd7f6"

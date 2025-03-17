@@ -9,3 +9,5 @@
   roles:
     - role: controller
       tags: ["avi","controller"]
+    - role: cloud
+      tags: ["avi","cloud"]
