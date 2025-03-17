@@ -1,5 +1,4 @@
 ---
-
 - name: Deploy Avi Controller
   community.vmware.vmware_deploy_ovf:
     hostname: "{{ avi_controller_vcenter_hostname }}"
@@ -106,11 +105,11 @@
         - "{{ avi_controller_ip }}"
   register: avi_controller_cert_result
 
-- name: SettingbBasic Controller config
+- name: Setting Basic Controller config
   vmware.alb.avi_systemconfiguration:
-    avi_credentials: "{{ avi_password }}"
+    avi_credentials: "{{ avi_credentials }}"
     welcome_workflow_complete: true
-    default_license_tier: ESSENTIALS
+    default_license_tier: ENTERPRISE
     email_configuration:
       smtp_type: SMTP_NONE
     global_tenant_config:
@@ -147,42 +146,23 @@
     save_local: true
   register: backup
 
-# resource "null_resource" "add_license" {
-#   depends_on = [avi_systemconfiguration.controller]
+- ansible.builtin.set_fact:
+    csrftoken: "{{ system_config_result.ansible_facts.avi_api_context[avi_controller_ip+':'+avi_tenant+':None'].csrftoken }}"
+    sessionid: "{{ system_config_result.ansible_facts.avi_api_context[avi_controller_ip+':'+avi_tenant+':None'].session_id }}"
 
-#   # Use timestamp to force re-execution
-#   triggers = {
-#     always_run = timestamp()
-#   }
-
-#   provisioner "local-exec" {
-#     command = "curl -X PUT -H \"Authorization: Basic ${base64encode("${var.avi_username}:${var.avi_password}")}\" -H \"Content-Type: application/json\" -d '{\"serial_key\":\"${var.avi_license_key}\"}' -k https://${var.avi_controller}/api/license"
-#   }
-# }
-
-# curl -k -i -c ./cookie-jar -H "X-Avi-Version: ${avi_version}" -H "X-Avi-Tenant: $avi_tenant" -H "Content-Type: application/json" -d '{"username": "'${avi_username}'", "password": "'${avi_password}'"}' -POST https://${avi_controller_ip}/login
-
-# avi_csrf_token=$(sed -nr "s/.*csrftoken[[:space:]]+(.*)$/\1/p" ./cookie-jar)
-
-# curl -k \
-#   -X PUT \
-#   -i \
-#   -b ./cookie-jar \
-#   -H "X-CSRFToken: ${avi_csrf_token}" \
-#   -H "Referer: https://${avi_controller_ip}/" \
-#   -H "Content-Type: application/json" \
-#   -d '{"name":"Backup-Configuration","backup_passphrase":"'${backup_passphrase}'","save_local":"true"}' \
-#   https://${avi_controller_ip}/api/backupconfiguration/${backup_configuration_uuid}
-
-# - name: Add Avi license
-#   ansible.builtin.uri:
-#     validate_certs: false
-#     url: "http://{{ avi_controller_ip }}/api/license"
-#     method: PUT
-#     status_code: 200,302,301,503
-#     headers:
-#       Content-Type: application/json
-#     body_format: json
-#     body:
-#       serial_key: "{{ avi_license_key }}"
+- name: Add Avi license
+  ansible.builtin.uri:
+    validate_certs: false
+    url: "http://{{ avi_controller_ip }}/api/license"
+    method: PUT
+    status_code: 200,302,301,503
+    headers:
+      Content-Type: application/json
+      X-CSRFToken: "{{ csrftoken }}"
+      Referer: "https://{{ avi_controller_ip }}"
+    body_format: json
+    body:
+      serial_key: "{{ avi_license_key }}"
+      csrftoken: "{{ csrftoken }}"
+      sessionid: "{{ sessionid }}"
 

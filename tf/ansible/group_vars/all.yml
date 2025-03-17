@@ -1,4 +1,7 @@
 ---
+dns_server: "8.8.8.8"
+ntp_server: "time.google.com"
+
 avi_controller_vcenter_hostname: "192.168.178.102"
 avi_controller_vcenter_username: "administrator@vsphere.local"
 avi_controller_vcenter_password: "VMware1!"
