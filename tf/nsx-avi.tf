@@ -1,4 +1,3 @@
-
 data "nsxt_policy_edge_cluster" "edge_cluster" {
   display_name = var.edge_cluster_name
 }

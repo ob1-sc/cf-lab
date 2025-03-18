@@ -42,8 +42,8 @@
           segment_config_mode: "TIER1_SEGMENT_MANUAL"
           manual:
             tier1_lrs:
-              segment_id: "{{ vip_network_segment_id }}"
-              tier1_lr_id: "{{ vip_network_tier1_lr_id }}"
+              - segment_id: "{{ vip_network_segment_id }}"
+                tier1_lr_id: "{{ vip_network_tier1_lr_id }}"
     vtype: CLOUD_NSXT
   register: cloud_config
 
@@ -57,57 +57,58 @@
       id: "{{ se_content_library_id }}"
     vcenter_url: "{{ cloud_vcenter_url }}"
 
-# - name: Set Management Network Default Gateway
-#   vmware.alb.avi_vrfcontext:
-#     avi_credentials: "{{ avi_credentials }}"
-#     cloud_ref: "/api/cloud?name={{ cloud_name }}"
-#     name: "management"
-#     static_routes:
-#       - route_id: "1"
-#         prefix:
-#           mask: 0
-#           ip_addr:
-#             type: "V4"
-#             addr: "0.0.0.0"
-#         next_hop:
-#           type: "V4"
-#           addr: "{{ se_management_network_gateway }}"
-
 # - name: Wait for cloud to configure
 #   ansible.builtin.pause:
 #     echo: false
-#     seconds: 30
+#     seconds: 10
 #   when: cloud_config.changed
 
-# - name: Check to ensure that cloud is in a sync'd state
-#   vmware.alb.avi_api_session:
-#     avi_credentials: "{{ avi_credentials }}"
-#     http_method: get
-#     path: cloudruntime
-#     params:
-#       name: "{{ cloud_name }}"
-#   register: cloud_status
+- name: Check to ensure that cloud is in a sync'd state
+  vmware.alb.avi_api_session:
+    avi_credentials: "{{ avi_credentials }}"
+    http_method: get
+    path: cloudruntime
+    params:
+      name: "{{ avi_cloud_name }}"
+  register: cloud_status
 
-# - name: Abort on sync error
-#   ansible.builtin.fail:
-#     msg:
-#       - "The cloud is still not synchronised"
-#       - "Check the status of the cloud in the console using https://{{ controller_ip }}"
-#   when: not cloud_status.obj.results[0].network_sync_complete
+- name: Set VIP Network Default Gateway
+  vmware.alb.avi_vrfcontext:
+    avi_credentials: "{{ avi_credentials }}"
+    cloud_ref: "/api/cloud/?name={{ avi_cloud_name }}"
+    name: "{{ vip_network_tier1_lr_display_name }}"
+    static_routes:
+      - route_id: "1"
+        prefix:
+          mask: 0
+          ip_addr:
+            type: "V4"
+            addr: "0.0.0.0"
+        next_hop:
+          type: "V4"
+          addr: "{{ vip_segment_gateway }}"
+    system_default: true
 
-# - name: Set VIP Network Default Gateway
-#   vmware.alb.avi_vrfcontext:
+# - name: Update VIP network
+#   vmware.alb.avi_network:
 #     avi_credentials: "{{ avi_credentials }}"
+#     name: "{{ se_vip_port_group }}"
 #     cloud_ref: "/api/cloud?name={{ cloud_name }}"
-#     name: "global"
-#     static_routes:
-#       - route_id: "1"
-#         prefix:
-#           mask: 0
+#     dhcp_enabled: false
+#     exclude_discovered_subnets: true
+#     configured_subnets:
+#       - prefix:
 #           ip_addr:
-#             type: "V4"
-#             addr: "0.0.0.0"
-#         next_hop:
-#           type: "V4"
-#           addr: "{{ se_vip_network_gateway }}"
-#     system_default: true
+#             addr: "{{ se_vip_network_cidr.split('/')[0] }}"
+#             type: V4
+#           mask: "{{ se_vip_network_cidr.split('/')[1] }}"
+#         static_ip_ranges:
+#           - range:
+#               begin:
+#                 addr: "{{ se_vip_network_range.split('-')[0] }}"
+#                 type: "V4"
+#               end:
+#                 addr: "{{ se_vip_network_range.split('-')[1] }}"
+#                 type: "V4"
+#             type: "STATIC_IPS_FOR_VIP_AND_SE"
+#   register: vip_network_result
