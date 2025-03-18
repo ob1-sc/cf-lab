@@ -1,3 +1,25 @@
-collections:
-  - name: vmware.alb
-    version: 31.1.1
+ansible==8.7.0
+ansible-core==2.15.13
+certifi==2025.1.31
+cffi==1.17.1
+charset-normalizer==3.4.1
+cryptography==44.0.2
+idna==3.10
+importlib-resources==5.0.7
+Jinja2==3.1.6
+lxml==5.3.1
+MarkupSafe==3.0.2
+packaging==24.2
+pycparser==2.22
+pyOpenSSL==25.0.0
+pyvmomi==8.0.3.0.1
+PyYAML==6.0.2
+requests==2.32.3
+resolvelib==1.0.1
+six==1.17.0
+typing_extensions==4.12.2
+urllib3==2.3.0
+vmware-vapi-common-client==2.52.0
+vmware-vapi-runtime==2.52.0
+vmware_vcenter==8.0.3.0
+vsphere-automation-sdk==1.87.0

@@ -89,26 +89,26 @@
           addr: "{{ vip_segment_gateway }}"
     system_default: true
 
-# - name: Update VIP network
-#   vmware.alb.avi_network:
-#     avi_credentials: "{{ avi_credentials }}"
-#     name: "{{ se_vip_port_group }}"
-#     cloud_ref: "/api/cloud?name={{ cloud_name }}"
-#     dhcp_enabled: false
-#     exclude_discovered_subnets: true
-#     configured_subnets:
-#       - prefix:
-#           ip_addr:
-#             addr: "{{ se_vip_network_cidr.split('/')[0] }}"
-#             type: V4
-#           mask: "{{ se_vip_network_cidr.split('/')[1] }}"
-#         static_ip_ranges:
-#           - range:
-#               begin:
-#                 addr: "{{ se_vip_network_range.split('-')[0] }}"
-#                 type: "V4"
-#               end:
-#                 addr: "{{ se_vip_network_range.split('-')[1] }}"
-#                 type: "V4"
-#             type: "STATIC_IPS_FOR_VIP_AND_SE"
-#   register: vip_network_result
+- name: Update VIP network
+  vmware.alb.avi_network:
+    avi_credentials: "{{ avi_credentials }}"
+    name: "{{ vip_segment_name }}"
+    cloud_ref: "/api/cloud/?name={{ avi_cloud_name }}"
+    dhcp_enabled: false
+    exclude_discovered_subnets: true
+    configured_subnets:
+      - prefix:
+          ip_addr:
+            addr: "{{ vip_network_cidr.split('/')[0] }}"
+            type: V4
+          mask: "{{ vip_network_cidr.split('/')[1] }}"
+        static_ip_ranges:
+          - range:
+              begin:
+                addr: "{{ vip_network_range.split('-')[0] }}"
+                type: "V4"
+              end:
+                addr: "{{ vip_network_range.split('-')[1] }}"
+                type: "V4"
+            type: "STATIC_IPS_FOR_VIP_AND_SE"
+  register: vip_network_result

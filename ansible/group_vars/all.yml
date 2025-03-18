@@ -1,0 +1,52 @@
+---
+dns_server: "8.8.8.8"
+ntp_server: "time.google.com"
+
+avi_controller_vcenter_hostname: "192.168.178.102"
+avi_controller_vcenter_username: "administrator@vsphere.local"
+avi_controller_vcenter_password: "VMware1!"
+avi_controller_vcenter_validate_certs: false
+avi_controller_vm_name: "avi-controller-ansible"
+avi_controller_network_name: "tanzu-without-dhcp"
+avi_controller_datastore: "datastore1"
+avi_controller_datacenter: "Home"
+avi_controller_cluster: "Physical"
+avi_controller_folder: ""
+avi_controller_ova_path: "/Users/ak016518/workspace/vmware-products/controller-31.1.1-9122.ova"
+avi_controller_api_version: 31.1.1
+avi_controller_cpu: 8
+avi_controller_memory: 32768
+avi_controller_disk_size: 128
+avi_controller_ip: "172.20.16.3"
+avi_controller_netmask: "255.255.255.0"
+avi_controller_gateway: "172.20.16.1"
+avi_controller_ssh_public_key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDNre3RSDIQIbswU/AbFMrdGDTRNIxXs1L1aY9ozDm/TsTKBf85Kr/0Bi3Az1DgOifR3s7SblZFhqKtGueqyv4NKoNy8dgxUsFzGKaRBmwGfCn9rp0hAV/r6BdyhRGloltaZ4KuR3v3AQTTjpyWPsf55wUIMYtOtrQ1tnNspmZmEyh11e8Hbwsq6jaVDCpSWkLPgir4lDTFANRpA/MaU9XUG3PjYszaNFgIScUwQVl0otmCpFgZgf9jXwy4K5CpG4u/1CSIA6H+5XAJaAzDNGcAIGQKaIAj6Cvd8QyUs+UEV5n6rJSsp+gnfu0gEYx4QmeWwcVdGu1Re18qHVgAP56gF58uV7p/V60Tlf9IFqkz67lwLlOuq9dfNmPGIJ/lydcLgcvXmJObyntm1jFi5ChtIrBd7uShh9b6wwOLhekv3TwOn0nHPjXDabVDcmfXVhAgyJyknCFv1Hm3UFwTngoc4WFm38wgxzajOzxt83b8bXXhMNaU8L8VXtVpfIrDHbAKhho6Aaf8JahKa46UxFa4yjkVfN75N4++8CdCpGiruLUp1rW4zYkrjxBuIBcib/06QTsvdPIsYVsPic/mYoxBVTclvLi/ELVdwFFSavwNKI+XwH6ENI7vckkVs6HpM0GJu4qsvmhrlkGVmNM0BkaJN1i1CQgn01OTz+um1rjr+Q== andy.knapp.ak@gmail.com"
+
+# Avi Admin Zugangsdaten
+avi_tenant: "admin"
+avi_username: "admin"
+avi_password: "VMware1!VMware1!"
+
+avi_cloud_name: "nsx-cloud-ansible"
+cloud_vcenter_url: "172.20.16.10"
+se_management_port_group: "avi-mgmt-seg-automated"
+se_content_library_id: "8cd90ae3-ec94-4660-a8ef-0c004a049720"
+cloud_vcenter_username: "administrator@vsphere.local"
+cloud_vcenter_password: "VMware1!"
+
+nsxt_url: "172.20.16.11"
+nsxt_username: admin 
+nsxt_password: "VMware1!VMware1!VMware1!"
+
+vip_segment_name: "avi-vip-seg-automated"
+vip_segment_gateway: 172.30.7.129
+vip_network_cidr: "172.30.7.128/28"
+vip_network_range: "172.30.7.131-172.30.7.135"
+
+"management_network_segment_id": "/infra/segments/9b2e4ab3-0565-478e-bdd4-1892a7f674d3"
+"management_network_tier1_lr_id": "/infra/tier-1s/t1-avi-mgmt"
+"management_network_transport_zone": "/infra/sites/default/enforcement-points/default/transport-zones/9ea9996c-ea48-427f-a77d-600e5f4b4d43"
+"vip_network_segment_id": "/infra/segments/c7553e1c-bd8b-4004-89a5-b19569a3c5cc"
+"vip_network_tier1_lr_id": "/infra/tier-1s/t1-avi-vip"
+"vip_network_transport_zone": "/infra/sites/default/enforcement-points/default/transport-zones/9ea9996c-ea48-427f-a77d-600e5f4b4d43"
+"vip_network_tier1_lr_display_name": "t1-avi-vip"
