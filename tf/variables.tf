@@ -68,6 +68,54 @@ variable "avi_vip_segment_gateway" {
   type        = string
 }
 
+#################################
+# TPCF Infra Network Configuration #
+#################################
+
+variable "tpcf_infra_segment_name" {
+  description = "Segment Name for TPCF Infra Network"
+  type        = string
+}
+
+variable "tpcf_infra_segment_ip_addr" {
+  description = "TPCF Infra Segment IP Address"
+  type        = string
+}
+
+variable "tpcf_infra_segment_ip_addr_mask" {
+  description = "Subnet Mask for TPCF Infra Segment"
+  type        = number
+}
+
+variable "tpcf_infra_segment_gateway" {
+  description = "Gateway for TPCF Infra Segment"
+  type        = string
+}
+
+#################################
+# TPCF Deployment Network Configuration #
+#################################
+
+variable "tpcf_deployment_segment_name" {
+  description = "Segment Name for TPCF Deployment Network"
+  type        = string
+}
+
+variable "tpcf_deployment_segment_ip_addr" {
+  description = "TPCF Deployment Segment IP Address"
+  type        = string
+}
+
+variable "tpcf_deployment_segment_ip_addr_mask" {
+  description = "Subnet Mask for TPCF Deployment Segment"
+  type        = number
+}
+
+variable "tpcf_deployment_segment_gateway" {
+  description = "Gateway for TPCF Deployment Segment"
+  type        = string
+}
+
 ###############################
 # NSX-T Configuration        #
 ###############################
@@ -93,6 +141,11 @@ variable "t1_avi_mgmt_name" {
 
 variable "t1_avi_vip_name" {
   description = "T1 Router Name for Avi VIP"
+  type        = string
+}
+
+variable "t1_tpcf_name" {
+  description = "T1 Router Name for TPCF"
   type        = string
 }
 
