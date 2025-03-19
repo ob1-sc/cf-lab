@@ -75,7 +75,7 @@ function main() {
     --volume ${LAB_ROOT_DIR}/ansible:/work \
     laidbackware/vmware-lab-builder:v12 \
     ansible-playbook \
-    /work/playbook.yml
+    /work/playbook.yml --extra-vars '@/config_dir/avi-nsx-tf-output-vars.yml'
 
     # /work/$MODE.yml --extra-vars '@/config_dir/avi.yml'
 
