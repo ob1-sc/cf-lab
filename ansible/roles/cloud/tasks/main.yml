@@ -57,11 +57,11 @@
       id: "{{ se_content_library_id }}"
     vcenter_url: "{{ cloud_vcenter_url }}"
 
-# - name: Wait for cloud to configure
-#   ansible.builtin.pause:
-#     echo: false
-#     seconds: 10
-#   when: cloud_config.changed
+- name: Wait for cloud to configure
+  ansible.builtin.pause:
+    echo: false
+    seconds: 10
+  when: cloud_config.changed
 
 - name: Check to ensure that cloud is in a sync'd state
   vmware.alb.avi_api_session:
@@ -87,15 +87,19 @@
         next_hop:
           type: "V4"
           addr: "{{ vip_segment_gateway }}"
+    attrs:
+      - key: tier1path
+        value: "{{ vip_network_tier1_lr_id }}"
     system_default: true
 
-- name: Update VIP network
+- name: Update VIP segment network
   vmware.alb.avi_network:
     avi_credentials: "{{ avi_credentials }}"
     name: "{{ vip_segment_name }}"
     cloud_ref: "/api/cloud/?name={{ avi_cloud_name }}"
+    vrf_context_ref: "/api/vrfcontext/?name={{ vip_network_tier1_lr_display_name }}"
     dhcp_enabled: false
-    exclude_discovered_subnets: true
+    # exclude_discovered_subnets: true
     configured_subnets:
       - prefix:
           ip_addr:
@@ -111,4 +115,11 @@
                 addr: "{{ vip_network_range.split('-')[1] }}"
                 type: "V4"
             type: "STATIC_IPS_FOR_VIP_AND_SE"
+    attrs:
+      - key: segmentid
+        value: "{{ vip_network_segment_id }}"
+      - key: autocreated
+        value: "{{ avi_cloud_name }}"
+      - key: cloudnetworkmode
+        value: static
   register: vip_network_result

@@ -1,0 +1,106 @@
+- name: Import Ops Manager Root CA
+  vmware.alb.avi_sslkeyandcertificate:
+    avi_credentials: "{{ avi_credentials }}"
+    type: SSL_CERTIFICATE_TYPE_CA
+    name: opsman-root-cert
+    certificate:
+      certificate: "{{ lookup('file', 'opsman-ca.pem') }}"
+  register: avi_controller_cert_result
+
+- name: Import TPCF Router Wildcard Cert
+  vmware.alb.avi_sslkeyandcertificate:
+    avi_credentials: "{{ avi_credentials }}"
+    type: SSL_CERTIFICATE_TYPE_VIRTUALSERVICE
+    name: tpcf-rtr-wildcart-cert
+    certificate:
+      certificate: "{{ lookup('file', 'tpcf-server-cert.pem') }}"
+    key: "{{ lookup('file', 'tpcf-server-key.pem') }}"
+  register: avi_controller_cert_result
+
+- name: Create Health Monitor for TPCF Router
+  vmware.alb.avi_healthmonitor:
+    avi_credentials: "{{ avi_credentials }}"
+    name: gorouter-health-monitor
+    type: HEALTH_MONITOR_HTTP
+    monitor_port: 8080
+    http_monitor:
+      http_request: "GET /health HTTP/1.0"
+      http_response_code:
+        - "HTTP_2XX"
+
+- name: Create Virtual Service VIP for TPCF Router
+  vmware.alb.avi_vsvip:
+    name: gorouter-vs-vip
+    avi_credentials: "{{ avi_credentials }}"
+    api_context: '{{avi_api_context | default(omit)}}'
+    vrf_context_ref: "/api/vrfcontext/?name={{ vip_network_tier1_lr_display_name }}"
+    tenant_ref: /api/tenant/?name=admin
+    cloud_ref: "/api/cloud/?name={{ avi_cloud_name}}"
+    vip:
+    - vip_id: '0'
+      ip_address:
+        type: V4
+        addr: 172.29.82.39
+
+- name: Create a Pool for TPCF Router
+  vmware.alb.avi_pool:
+    avi_credentials: "{{ avi_credentials }}"
+    name: tas-web-pool01
+    cloud_ref: "/api/cloud/?name={{ avi_cloud_name}}"
+    vrf_ref: "/api/vrfcontext/?name={{ vip_network_tier1_lr_display_name }}"
+    state: present
+    ssl_profile_ref: '/api/sslprofile?name=System-Standard'
+    health_monitor_refs:
+    - '/api/healthmonitor?name=gorouter-health-monitor'
+    nsx_securitygroup: "{{ nsxt_policy_group_gorouters_path }}"
+    inline_health_monitor: false
+    default_server_port: 443
+
+- name: Create SSL Virtual Service for TPCF Router
+  vmware.alb.avi_virtualservice:
+    avi_credentials: "{{ avi_credentials }}"
+    name: tpcf-router-virtual-service
+    cloud_ref: "/api/cloud/?name={{ avi_cloud_name}}"
+    vrf_context_ref: "/api/vrfcontext/?name={{ vip_network_tier1_lr_display_name }}"
+    state: present
+    vsvip_ref: /api/vsvip/?name=gorouter-vs-vip
+    services:
+    - port: 443
+      enable_ssl: true
+    application_profile_ref: '/api/applicationprofile?name=System-Secure-HTTP'
+    ssl_key_and_certificate_refs:
+    - '/api/sslkeyandcertificate?name=tpcf-rtr-wildcart-cert'
+    pool_ref: '/api/pool?name=tas-web-pool01'
+
+- name: Create Health Monitor for TPCF APP SSH
+  vmware.alb.avi_healthmonitor:
+    avi_credentials: "{{ avi_credentials }}"
+    name: tpcf-appssh-health-monitor
+    type: HEALTH_MONITOR_TCP
+    monitor_port: 2222
+
+- name: Create a Pool for TPCF APP SSH
+  vmware.alb.avi_pool:
+    avi_credentials: "{{ avi_credentials }}"
+    name: tpcf-appssh-pool01
+    cloud_ref: "/api/cloud/?name={{ avi_cloud_name }}"
+    vrf_ref: "/api/vrfcontext/?name={{ vip_network_tier1_lr_display_name }}"
+    state: present
+    health_monitor_refs:
+    - '/api/healthmonitor?name=tpcf-appssh-health-monitor'
+    nsx_securitygroup: "{{ nsxt_policy_group_diego_brain_path }}"
+    inline_health_monitor: false
+    default_server_port: 2222
+
+- name: Create SSL Virtual Service for APP SSH
+  vmware.alb.avi_virtualservice:
+    avi_credentials: "{{ avi_credentials }}"
+    name: tpcf-app-ssh-virtual-service
+    cloud_ref: "/api/cloud/?name={{ avi_cloud_name}}"
+    vrf_context_ref: "/api/vrfcontext/?name={{ vip_network_tier1_lr_display_name }}"
+    state: present
+    vsvip_ref: /api/vsvip/?name=gorouter-vs-vip
+    services:
+    - port: 2222
+    application_profile_ref: '/api/applicationprofile?name=System-L4-Application'
+    pool_ref: '/api/pool?name=tpcf-appssh-pool01'

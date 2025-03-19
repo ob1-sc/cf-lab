@@ -11,3 +11,5 @@
       tags: ["avi","controller"]
     - role: cloud
       tags: ["avi","cloud"]
+    - role: virtual-service
+      tags: ["avi","virtual-service"]
