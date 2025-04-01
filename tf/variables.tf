@@ -1,4 +1,28 @@
 ###############################
+# Control Plane Network     #
+###############################
+
+variable "cp_segment_name" {
+  description = "Segment Name for Control Plane Network"
+  type        = string
+}
+
+variable "cp_segment_ip_addr" {
+  description = "Control Plane Segment IP Address"
+  type        = string
+}
+
+variable "cp_segment_ip_addr_mask" {
+  description = "Subnet Mask for Control Plane Segment"
+  type        = number
+}
+
+variable "cp_segment_gateway" {
+  description = "Gateway for Control Plane Segment"
+  type        = string
+}
+
+###############################
 # Avi Management Network     #
 ###############################
 
@@ -146,6 +170,11 @@ variable "t1_avi_vip_name" {
 
 variable "t1_tpcf_name" {
   description = "T1 Router Name for TPCF"
+  type        = string
+}
+
+variable "t1_cp_name" {
+  description = "T1 Router Name for Control Plane"
   type        = string
 }
 
