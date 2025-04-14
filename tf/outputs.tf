@@ -9,6 +9,7 @@ locals {
     vip_network_segment_id = nsxt_policy_segment.avi_vip_segment.path
     nsxt_policy_group_gorouters_path = nsxt_policy_group.gorouters.path
     nsxt_policy_group_diego_brain_path = nsxt_policy_group.diego_brain.path
+    nsxt_policy_group_cp_web_path = nsxt_policy_group.cp_web.path
   }
 }
 

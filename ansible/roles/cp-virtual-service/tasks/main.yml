@@ -1,0 +1,112 @@
+- name: Create Health Monitor for CP Web
+  vmware.alb.avi_healthmonitor:
+    avi_credentials: "{{ avi_credentials }}"
+    name: cp-web-health-monitor
+    type: HEALTH_MONITOR_TCP
+    monitor_port: 443
+
+- name: Create Health Monitor for CP UAA
+  vmware.alb.avi_healthmonitor:
+    avi_credentials: "{{ avi_credentials }}"
+    name: cp-uaa-health-monitor
+    type: HEALTH_MONITOR_TCP
+    monitor_port: 8443
+
+- name: Create Health Monitor for CP Credhub
+  vmware.alb.avi_healthmonitor:
+    avi_credentials: "{{ avi_credentials }}"
+    name: cp-credhub-health-monitor
+    type: HEALTH_MONITOR_TCP
+    monitor_port: 8844
+
+- name: Create a Pool for CP Web
+  vmware.alb.avi_pool:
+    avi_credentials: "{{ avi_credentials }}"
+    name: cp-web-pool
+    cloud_ref: "/api/cloud/?name={{ avi_cloud_name }}"
+    vrf_ref: "/api/vrfcontext/?name={{ vip_network_tier1_lr_display_name }}"
+    state: present
+    health_monitor_refs:
+    - '/api/healthmonitor?name=cp-web-health-monitor'
+    nsx_securitygroup: "{{ nsxt_policy_group_cp_web_path }}"
+    inline_health_monitor: false
+    default_server_port: 443
+
+- name: Create a Pool for CP UAA
+  vmware.alb.avi_pool:
+    avi_credentials: "{{ avi_credentials }}"
+    name: cp-uaa-pool
+    cloud_ref: "/api/cloud/?name={{ avi_cloud_name }}"
+    vrf_ref: "/api/vrfcontext/?name={{ vip_network_tier1_lr_display_name }}"
+    state: present
+    health_monitor_refs:
+    - '/api/healthmonitor?name=cp-uaa-health-monitor'
+    nsx_securitygroup: "{{ nsxt_policy_group_cp_web_path }}"
+    inline_health_monitor: false
+    default_server_port: 8443
+
+- name: Create a Pool for CP Credhub
+  vmware.alb.avi_pool:
+    avi_credentials: "{{ avi_credentials }}"
+    name: cp-credhub-pool
+    cloud_ref: "/api/cloud/?name={{ avi_cloud_name }}"
+    vrf_ref: "/api/vrfcontext/?name={{ vip_network_tier1_lr_display_name }}"
+    state: present
+    health_monitor_refs:
+    - '/api/healthmonitor?name=cp-credhub-health-monitor'
+    nsx_securitygroup: "{{ nsxt_policy_group_cp_web_path }}"
+    inline_health_monitor: false
+    default_server_port: 8844
+
+- name: Create Virtual Service VIP for Control Plane Services
+  vmware.alb.avi_vsvip:
+    name: cp-vs-vip
+    avi_credentials: "{{ avi_credentials }}"
+    api_context: '{{avi_api_context | default(omit)}}'
+    vrf_context_ref: "/api/vrfcontext/?name={{ vip_network_tier1_lr_display_name }}"
+    tenant_ref: /api/tenant/?name=admin
+    cloud_ref: "/api/cloud/?name={{ avi_cloud_name}}"
+    vip:
+    - vip_id: '0'
+      ip_address:
+        type: V4
+        addr: 172.29.82.38
+
+- name: Create SSL Virtual Service for CP Web
+  vmware.alb.avi_virtualservice:
+    avi_credentials: "{{ avi_credentials }}"
+    name: cp-web-virtual-service
+    cloud_ref: "/api/cloud/?name={{ avi_cloud_name}}"
+    vrf_context_ref: "/api/vrfcontext/?name={{ vip_network_tier1_lr_display_name }}"
+    state: present
+    vsvip_ref: /api/vsvip/?name=cp-vs-vip
+    services:
+    - port: 443
+    application_profile_ref: '/api/applicationprofile?name=System-L4-Application'
+    pool_ref: '/api/pool?name=cp-web-pool'
+
+- name: Create SSL Virtual Service for CP UAA
+  vmware.alb.avi_virtualservice:
+    avi_credentials: "{{ avi_credentials }}"
+    name: cp-uaa-virtual-service
+    cloud_ref: "/api/cloud/?name={{ avi_cloud_name}}"
+    vrf_context_ref: "/api/vrfcontext/?name={{ vip_network_tier1_lr_display_name }}"
+    state: present
+    vsvip_ref: /api/vsvip/?name=cp-vs-vip
+    services:
+    - port: 8443
+    application_profile_ref: '/api/applicationprofile?name=System-L4-Application'
+    pool_ref: '/api/pool?name=cp-uaa-pool'
+
+- name: Create SSL Virtual Service for CP Credhub
+  vmware.alb.avi_virtualservice:
+    avi_credentials: "{{ avi_credentials }}"
+    name: cp-credhub-virtual-service
+    cloud_ref: "/api/cloud/?name={{ avi_cloud_name}}"
+    vrf_context_ref: "/api/vrfcontext/?name={{ vip_network_tier1_lr_display_name }}"
+    state: present
+    vsvip_ref: /api/vsvip/?name=cp-vs-vip
+    services:
+    - port: 8844
+    application_profile_ref: '/api/applicationprofile?name=System-L4-Application'
+    pool_ref: '/api/pool?name=cp-credhub-pool'

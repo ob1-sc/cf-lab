@@ -127,3 +127,23 @@ resource "nsxt_policy_group" "tcp_router" {
     ignore_changes = [conjunction]
   }
 }
+
+resource "nsxt_policy_group" "cp_web" {
+  display_name = "cp_web"
+  description  = "A NS Group for Control Plane Web VMs"
+
+  # it might be useful to also add a criteria for the foundation name and let BOSH director add a tag
+  # with the foundation name to every VM using Identification Tags: https://techdocs.broadcom.com/us/en/vmware-tanzu/platform/tanzu-operations-manager/3-0/tanzu-ops-manager/vsphere-config.html#:~:text=Enter%20your%20comma%2Dseparated%20custom%20Identification%20Tags.
+  criteria {
+    condition {
+      key         = "Tag"
+      member_type = "SegmentPort"
+      operator    = "EQUALS"
+      value       = "cp_web"
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [conjunction]
+  }
+}
